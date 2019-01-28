@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='styles/index.css')}}">
+    <title>Workstation Experiment Scheduler</title>
+  </head>
+  <body>
+    <h1>Workstation Experiment Scheduler</h1>
+
+    <form name="experimentform" oninput="update_form()" method="post">
+    <fieldset>
+      <legend>Scheduling an Experiment</legend>
+      
+      Working directory will be your home directory!<br>
+      
+      Experiment Execution Command:<br>
+      <input type="text" name="execcmd" value="" required><br>
+    
+      Experiment Name:<br>
+      <input type="text" name="experimentname" value="" maxlength="32" required><br>
+
+      User Name: <br>
+      <select name="username">
+      {% for user_name in user_name_list %}
+      <option value="{{user_name}}">{{user_name}}</option>
+      {% endfor %}
+      </select><br>
+
+      Development Framework:<br>
+      <select name="framework" id="framework">
+        <option value="tensorflow">Tensorflow</option>
+        <option value="chainer">Chainer</option>
+      </select><br>
+
+      <input type="checkbox" id="multiworker" name="multiworker" value="multiworker"> Use multiple workers<br><br>
+      <fieldset>
+        <legend>Worker GPU Settings</legend>
+        <input type="radio" id="gpusettings" name="gpusettings" value="forcesinglegpu">Force use only single GPU (per worker)<br>
+        <input type="radio" id="gpusettings" name="gpusettings" value="forcemultigpu">Force use more than one GPU (per worker)<br>
+        <input type="radio" id="gpusettings" name="gpusettings" value="useavailable" checked>Use what is available (recommended)<br>
+      </fieldset><br>
+
+      <input type="submit" value="Submit"><br>
+    </fieldset>
+    </form>
+
+    {% if form_success %}
+    <p id='formmsg'><font color="green"><b>{{form_msg}}</b></font></p>
+    {% else %}
+    <p id='formmsg'><font color="red"><b>{{form_msg}}</b></font></p>
+    {% endif %}
+
+    Current workstation load:
+    <table>
+      <tr>
+        <th>Worker Index</th>
+        {% for device_index in range(num_available_gpu_per_worker) %}
+        <th>GPU {{device_index}}</th>
+        {% endfor %}
+      </tr>
+      {% for worker in workers %}
+      <tr>
+        <td>{{worker}}</td>
+        {% for device_state in device_states[worker] %}
+        {% if device_state %}
+        <td style="background-color: green;">Free</td>
+        {% else %}
+        <td style="background-color: red;">Used</td>
+        {% endif %}
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </table><br>
+
+    Pending Experiments:
+    <table id="pendingexperiments">
+      <tr>
+        <th>Schedule Time</th>
+        <th>Experiment Name</th>
+        <th>User Name</th>
+      </tr>
+      {% for e in pending_experiments %}
+      <tr>
+        <td>{{e.schedule_time}}</td>
+        <td>{{e.name}}</td>
+        <td>{{e.user_name}}</td>
+      </tr>
+      {% endfor %}
+    </table><br>
+
+    Active Experiments:
+    <table id="activeexperiments">
+      <tr>
+        <th>Start Time</th>
+        <th>Experiment Name</th>
+        <th>User Name</th>
+      </tr>
+      {% for e in active_experiments %}
+      <tr>
+        <td>{{e.start_time}}</td>
+        <td>{{e.name}}</td>
+        <td>{{e.user_name}}</td>
+      </tr>
+      {% endfor %}
+    </table><br>
+
+    Finished Experiments:
+    <table id="finishedexperiments">
+      <tr>
+        <th>Finish Time</th>
+        <th>Experiment Name</th>
+        <th>User Name</th>
+      </tr>
+      {% for e in finished_experiments %}
+      <tr>
+        <td>{{e.start_time}}</td>
+        <td>{{e.name}}</td>
+        <td>{{e.user_name}}</td>
+      </tr>
+      {% endfor %}
+    </table><br>
+
+
+    <script>
+      function update_form() {
+          if (document.getElementById('framework').selectedIndex == 0) {
+              document.getElementById('multiworker').disabled = false;
+          } else {
+              document.getElementById('multiworker').disabled = true;
+              document.getElementById('multiworker').checked = false;
+          }
+          
+      }
+    </script>
+
+  </body>
+</html>
