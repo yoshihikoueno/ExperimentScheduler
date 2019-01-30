@@ -1,11 +1,11 @@
 import flask
 
-from server import experiment_builder as eb
-from server import task
+import experiment_builder as eb
+import task
 
 
 class WebInterface():
-  def __init__(self, scheduler_ref):
+  def __init__(self, scheduler_ref, num_devices_per_worker):
     self.app = flask.Flask(__name__)
 
     self.experiment_builder = eb.ExperimentBuilder()
@@ -28,15 +28,13 @@ class WebInterface():
 
       return flask.render_template(
         'index.html',
-        num_available_gpu_per_worker=(scheduler_ref.
-                                      num_available_gpu_per_worker),
         form_msg=msg,
-        form_success=success, workers=scheduler_ref.device_states.keys(),
+        num_devices_per_worker=num_devices_per_worker,
+        form_success=success, workers=scheduler_ref.workers,
         user_name_list=scheduler_ref.user_name_list,
         pending_experiments=scheduler_ref.pending_experiments,
         active_experiments=scheduler_ref.active_experiments,
-        finished_experiments=scheduler_ref.finished_experiments,
-        device_states=scheduler_ref.device_states)
+        finished_experiments=scheduler_ref.finished_experiments)
 
   def run(self, public):
     # Host 0.0.0.0 is required to make server visible in local network.

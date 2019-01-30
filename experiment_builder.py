@@ -44,7 +44,7 @@ class ExperimentBuilder():
       return False, 'Invalid user name.'
 
     if ('multiworker' in experiment_dict and experiment_dict['framework']
-        == 'tensorflow'):
+        != 'tensorflow'):
       return False, 'Using multi worker and not tensorflow is not implemented.'
 
     return True, 'Success.'

@@ -14,4 +14,6 @@ class Experiment():
     self.schedule_time = datetime.datetime.now()
     self.start_time = None
     self.finish_time = None
+    # Can be 'killed: <reason>', 'success', 'error: <code>'
+    self.finish_return_code = None
     self.unique_id = hash(self.name + self.user_name + str(self.schedule_time))

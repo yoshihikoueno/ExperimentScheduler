@@ -50,18 +50,18 @@
     <p id='formmsg'><font color="red"><b>{{form_msg}}</b></font></p>
     {% endif %}
 
-    Current workstation load:
+    Current Workstation Load:
     <table>
       <tr>
-        <th>Worker Index</th>
-        {% for device_index in range(num_available_gpu_per_worker) %}
+        <th>Host</th>
+        {% for device_index in range(num_devices_per_worker) %}
         <th>GPU {{device_index}}</th>
         {% endfor %}
       </tr>
-      {% for worker in workers %}
+      {% for worker in workers.values() %}
       <tr>
-        <td>{{worker}}</td>
-        {% for device_state in device_states[worker] %}
+        <td>{{worker.host}}</td>
+        {% for device_state in worker.device_states %}
         {% if device_state %}
         <td style="background-color: green;">Free</td>
         {% else %}
@@ -95,7 +95,7 @@
         <th>Experiment Name</th>
         <th>User Name</th>
       </tr>
-      {% for e in active_experiments %}
+      {% for e in active_experiments.values() %}
       <tr>
         <td>{{e.start_time}}</td>
         <td>{{e.name}}</td>
@@ -107,15 +107,19 @@
     Finished Experiments:
     <table id="finishedexperiments">
       <tr>
+        <th>Start Time</th>
         <th>Finish Time</th>
         <th>Experiment Name</th>
         <th>User Name</th>
+        <th>Return Code</th>
       </tr>
-      {% for e in finished_experiments %}
+      {% for e in finished_experiments.values() %}
       <tr>
         <td>{{e.start_time}}</td>
+        <td>{{e.finish_time}}</td>
         <td>{{e.name}}</td>
         <td>{{e.user_name}}</td>
+        <td>{{e.finish_return_code}}</td>
       </tr>
       {% endfor %}
     </table><br>

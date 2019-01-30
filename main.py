@@ -2,8 +2,11 @@ import argparse
 import grp
 import threading
 import logging
+import time
 
 import scheduler
+import worker_interface
+from utils import logger
 from web import web_interface as wi
 
 # Parse CL arguments
@@ -15,8 +18,15 @@ args = parser.parse_args()
 
 
 def run():
-  num_devices_per_worker = 2
-  workers = ['127.0.0.1']
+  logger.init_logger()
+
+  num_devices_per_worker = 1
+  # We could run up to one tf server per device on one worker, so we need to
+  # have that many ports
+  initial_tf_port = 2222
+  tf_ports = list(range(initial_tf_port,
+                        initial_tf_port + num_devices_per_worker))
+  hosts = ['127.0.0.1']
 
   user_name_list = []
   group_database = grp.getgrnam('researchers')
@@ -24,11 +34,17 @@ def run():
   for user in group_database.gr_mem:
     user_name_list.append(user)
 
-  experiment_scheduler = scheduler.Scheduler(
-    num_devices_per_worker=num_devices_per_worker, workers=workers,
-    user_name_list=user_name_list)
+  workers = dict()
+  for host in hosts:
+    workers[host] = worker_interface.WorkerInterface(
+      host=host, tf_ports=tf_ports, num_devices=num_devices_per_worker)
 
-  web_interface = wi.WebInterface(scheduler_ref=experiment_scheduler)
+  experiment_scheduler = scheduler.Scheduler(workers=workers,
+                                             user_name_list=user_name_list)
+
+  web_interface = wi.WebInterface(
+    scheduler_ref=experiment_scheduler,
+    num_devices_per_worker=num_devices_per_worker)
 
   public = args.public
   # Start web server thread
@@ -37,8 +53,21 @@ def run():
   web_thread.start()
   logging.info('Web Interface Thread started.')
 
+  # Specify updates per second
+  ups = 0.2
+  frame_time = 1.0 / ups
+  t0 = time.time()
+  t_accumulated = 0
   while True:
-    experiment_scheduler.update()
+    t1 = time.time()
+    t_accumulated += (t1 - t0)
+    t0 = t1
+
+    while t_accumulated > frame_time:
+      t_accumulated -= frame_time
+      experiment_scheduler.update()
+
+    time.sleep(frame_time - t_accumulated)
 
 
 if __name__ == '__main__':
