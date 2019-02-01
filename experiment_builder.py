@@ -47,4 +47,8 @@ class ExperimentBuilder():
         != 'tensorflow'):
       return False, 'Using multi worker and not tensorflow is not implemented.'
 
+    if ('multiworker' in experiment_dict and experiment_dict['gpusettings']
+        == 'forcesinglegpu'):
+      return False, 'Cannot use multiple workers and force single GPU use.'
+
     return True, 'Success.'

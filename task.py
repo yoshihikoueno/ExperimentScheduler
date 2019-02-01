@@ -3,6 +3,7 @@ import enum
 
 class TaskType(enum.Enum):
   NEW_EXPERIMENT = 1
+  STOP_EXPERIMENT = 2
 
 
 class Task:

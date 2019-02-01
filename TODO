@@ -1,0 +1,5 @@
+*** DONE  Implement experiment time limit
+    CLOSED: [2019-02-01 Fri 12:46]
+
+*** TODO  Allow restarting scheduler from previous state
+*** TODO  Enable starting multiple experiments at once

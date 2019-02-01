@@ -1,10 +1,11 @@
 import os
 import json
 import subprocess
+import logging
 
 
 class WorkerInterface:
-  def __init__(self, host, tf_ports, num_devices):
+  def __init__(self, host, tf_ports, num_devices, logdir):
     self.host = host
     self.device_states = [True] * num_devices
 
@@ -19,6 +20,16 @@ class WorkerInterface:
     # Contains ports that are in use
     self._used_tf_ports = []
 
+    self._logdir = logdir
+
+  def shutdown(self):
+    for p in self._tf_server_processes.values():
+      logging.info("Terminating TF Server Process.")
+      p.terminate()
+    for p in self._experiment_processes.values():
+      logging.info("Terminating Experiment Process.")
+      p.terminate()
+  
   # Returns a list of tuples of (experiment_id, return_code) that are finished
   def poll_experiments(self):
     result = []
@@ -62,10 +73,10 @@ class WorkerInterface:
 
     env = self._get_env(device_indices, tf_config_env)
 
-    cmd = ('ssh {} python3 ExperimentScheduler/start_tf_server.py'
+    cmd = ('ssh -t {} python3 ExperimentScheduler/start_tf_server.py'
            .format(self.host))
 
-    p = subprocess.Popen([cmd.split()], env=env)
+    p = subprocess.Popen(cmd, env=env, shell=True)
 
     self._tf_server_processes[experiment_id] = (p, port, device_indices)
 
@@ -74,7 +85,7 @@ class WorkerInterface:
 
     p, port, device_indices = self._tf_server_processes[experiment_id]
 
-    p.terminate()
+    p.kill()
 
     assert(port in self._used_tf_ports)
     self._used_tf_ports.remove(port)
@@ -95,13 +106,17 @@ class WorkerInterface:
 
     env = self._get_env(device_indices, tf_config_env)
 
-    cmd = 'ssh {} cd /home/{}; {}'.format(
-      self.host, experiment.user_name, experiment.exec_cmd)
+    cmd = 'ssh -t {} {}'.format(self.host, experiment.exec_cmd)
 
-    p = subprocess.Popen(cmd.split(), env=env, universal_newlines=True,
-                         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-    self._experiment_processes[experiment.unique_id] = p
+    # Create log files for this experiment
+    with open(os.path.join(self._logdir, '{}_stdout'.format(
+        experiment.unique_id)), 'w') as out, open(os.path.join(
+          self._logdir, '{}_stderr'.format(experiment.unique_id)),
+                                                   'w') as err:
+      self._experiment_processes[experiment.unique_id] = subprocess.Popen(
+        cmd, env=env, universal_newlines=True,
+        stdout=out, stderr=err, shell=True, cwd='/home/{}'.format(
+          experiment.user_name))
 
     self._active_experiments[experiment.unique_id] = (
       experiment, device_indices)
@@ -117,7 +132,7 @@ class WorkerInterface:
       return_code = 'Killed: {}'.format(reason)
     else:
       if return_code == 0:
-        return_code = 'Success.'
+        return_code = 'Success'
       else:
         return_code = 'Error: {}'.format(return_code)
 

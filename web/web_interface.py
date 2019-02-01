@@ -15,16 +15,50 @@ class WebInterface():
       msg = ''
       success = False
       if flask.request.method == 'POST':
-        success, msg = self.experiment_builder.is_valid_experiment(
-          flask.request.form)
-
-        if success:
-          experiment = self.experiment_builder.build_experiment(
-              flask.request.form)
-          t = task.Task(
-            task_type=task.TaskType.NEW_EXPERIMENT,
-            experiment=experiment)
+        # Check if it was a stop experiment button
+        if 'Stop' in list(flask.request.form.values()):
+          # We have to stop an experiment
+          experiment_id = list(flask.request.form.keys())[0]
+          t = task.Task(task_type=task.TaskType.STOP_EXPERIMENT,
+                        experiment_id=experiment_id, host=flask.request.host)
           scheduler_ref.task_queue.put(t)
+
+        # Check if it was stdout button
+        elif 'Stdout' in list(flask.request.form.values()):
+         experiment_id = list(flask.request.form.keys())[0]
+         if (int(experiment_id) in scheduler_ref.active_experiments
+             or int(experiment_id) in scheduler_ref.finished_experiments):
+           log_path = scheduler_ref.get_experiment_stdout_path(experiment_id)
+
+           with open(log_path, 'r') as f:
+             return flask.Response(f.read(), mimetype='text/plain')
+         else:
+           msg = 'Log not found.'
+
+        # Check if it was stderr button
+        elif 'Stderr' in list(flask.request.form.values()):
+          experiment_id = list(flask.request.form.keys())[0]
+          if (int(experiment_id) in scheduler_ref.active_experiments
+             or int(experiment_id) in scheduler_ref.finished_experiments):
+            log_path = scheduler_ref.get_experiment_stderr_path(experiment_id)
+
+            with open(log_path, 'r') as f:
+              return flask.Response(f.read(), mimetype='text/plain')
+          else:
+            msg = 'Log not found.'
+
+        else:
+          # Create experiment request
+          success, msg = self.experiment_builder.is_valid_experiment(
+            flask.request.form)
+
+          if success:
+            experiment = self.experiment_builder.build_experiment(
+              flask.request.form)
+            t = task.Task(
+              task_type=task.TaskType.NEW_EXPERIMENT,
+              experiment=experiment)
+            scheduler_ref.task_queue.put(t)
 
       return flask.render_template(
         'index.html',

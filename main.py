@@ -3,6 +3,7 @@ import grp
 import threading
 import logging
 import time
+import os
 
 import scheduler
 import worker_interface
@@ -11,6 +12,8 @@ from web import web_interface as wi
 
 # Parse CL arguments
 parser = argparse.ArgumentParser()
+parser.add_argument('logdir',
+                    help="Directory where all log files should be stored")
 parser.add_argument('--public', action='store_true',
                     help='Whether to publish web server to the local network')
 
@@ -18,12 +21,17 @@ args = parser.parse_args()
 
 
 def run():
-  logger.init_logger()
+  if not os.path.exists(args.logdir):
+    raise ValueError("Invalid logdir.")
+
+  logger.init_logger(args.logdir)
 
   num_devices_per_worker = 1
+  # In hours, 0 for no limit
+  experiment_time_limit = 12
+  initial_tf_port = 2222
   # We could run up to one tf server per device on one worker, so we need to
   # have that many ports
-  initial_tf_port = 2222
   tf_ports = list(range(initial_tf_port,
                         initial_tf_port + num_devices_per_worker))
   hosts = ['127.0.0.1']
@@ -37,10 +45,12 @@ def run():
   workers = dict()
   for host in hosts:
     workers[host] = worker_interface.WorkerInterface(
-      host=host, tf_ports=tf_ports, num_devices=num_devices_per_worker)
+      host=host, tf_ports=tf_ports, num_devices=num_devices_per_worker,
+      logdir=args.logdir)
 
-  experiment_scheduler = scheduler.Scheduler(workers=workers,
-                                             user_name_list=user_name_list)
+  experiment_scheduler = scheduler.Scheduler(
+    workers=workers, user_name_list=user_name_list,
+    logdir=args.logdir, experiment_time_limit=experiment_time_limit)
 
   web_interface = wi.WebInterface(
     scheduler_ref=experiment_scheduler,
