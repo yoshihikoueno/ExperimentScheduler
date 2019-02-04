@@ -186,62 +186,64 @@ class Scheduler:
   # (experiment id, reason) that need to be stopped
   def _can_accomodate(self, experiment):
     free_device_indices = self._get_free_device_indices()
-
-    can_fit, assigned_worker_devices = self._can_fit(
-      experiment, free_device_indices)
-
-    if can_fit is True:
-      return True, assigned_worker_devices, []
-
-    # Check if we can stop some invalid experiments to make enough room
     invalid_experiments = self._get_invalid_experiments()
 
-    # We want to stop as few as possible experiments, so we need to search
-    # beginning from removing single experiments
-    num_remove = 1
-    for num_remove in range(1, len(invalid_experiments) + 1):
-      remove_permutations = self._get_remove_permutations(
-        list(range(len(invalid_experiments))), num_remove)
-      for remove_indices in remove_permutations:
-        # Assuming we remove the experiments at remove_indices, will we have
-        # enough room for our new experiment?
-        new_free_device_indices = dict(free_device_indices)
-        for remove_id, reason in remove_experiments:
-          additional_device_indices = self._active_experiment_clusters[
-            remove_id]
-          # We need to merge both dicts
-          for k, v in additional_device_indices.items():
-            if k in new_free_device_indices:
-              new_free_device_indices[k] += v
-            else:
-              new_free_device_indices[k] = v
+    # If the experiment requires only a single GPU, we only need to remove one
+    # invalid experiment at maximum
+    if experiment.gpusettings == 'forcesinglegpu':
+      can_fit, assigned_worker_devices = self._can_fit(
+        experiment, free_device_indices)
+      if can_fit is True:
+        # We can just leave the invalid experiments, since we can start the
+        # current experiment anyway
+        return True, assigned_worker_devices, []
+      else:
+        if len(invalid_experiments) > 0:
+          # Find the best experiment to remove, i.e. an experiment that would
+          # only free up one GPU
+          lowest_num_free_devices = 9999999
+          invalid_experiment_tuple = None
+          for invalid_experiment_id, reason in invalid_experiments:
+            num_free_devices = 0
+            worker_to_device_indices = self._active_experiment_clusters[
+              invalid_experiment_id]
+            for device_indices in worker_to_device_indices.values():
+              num_free_devices += len(device_indices)
+            if num_free_devices < lowest_num_free_devices:
+              lowest_num_free_devices = num_free_devices
+              invalid_experiment_tuple = (invalid_experiment_id, reason)
 
-        can_fit, worker_to_device_indices = self._can_fit(
-          experiment, new_free_device_indices)
-        if can_fit is True:
-          # We have found a suitable remove combination!
-          return (True, worker_to_device_indices, remove_experiments)
+          # Get new device assigment for new experiment
+          worker_to_device_indices = self._active_experiment_clusters[
+            invalid_experiment_tuple[0]]
+          can_fit, assigned_worker_devices = self._can_fit(
+            experiment, worker_to_device_indices)
+          assert(can_fit)
+          return True, assigned_worker_devices, [invalid_experiment_tuple]
+        else:
+          return False, {}, []
 
-    return (False, {}, [])
+    else:
+      # The new experiment is able to use more than a single GPU
 
-  # Assuming we want to remove 2 elements from four removable indices.
-  # From each permutation, we then want to take the first 2 indices,
-  # And only take the uniques (also counting (1,2) and (2,1) as the same)
-  def _get_remove_permutations(indices, num_removes):
-    perms = list(itertools.permutations(indices))
+      # Update available devices when removing all invalid experiments
+      for invalid_experiment_id, reason in invalid_experiments:
+        additional_device_indices = self._active_experiment_clusters[
+          invalid_experiment_id]
+        # We need to merge both dicts
+        for k, v in additional_device_indices.items():
+          if k in free_device_indices:
+            free_device_indices[k] += v
+          else:
+            free_device_indices[k] = v
 
-    # Slice and sort permutations
-    sliced_perms = []
-    for perm in perms:
-      sliced_perm = perm[0:num_removes + 1]
-      sliced_perm.sort()
-      # We need to make a tuple as a set cannot work on a list
-      sliced_perms.append(tuple(sliced_perm))
-
-    # Remove duplicates
-    sliced_perms = list(set(sliced_perms))
-
-    return sliced_perms
+      # Get updated device placement
+      can_fit, assigned_worker_devices = self._can_fit(experiment,
+                                                       free_device_indices)
+      if can_fit is True:
+        return True, assigned_worker_devices, invalid_experiments
+      else:
+        return False, {}, []
 
   # Checks if the experiment can fit in free_worker_devices
   # and returns a tuple consisting of a boolean indicating this result and
@@ -254,47 +256,28 @@ class Scheduler:
     if total_len == 0:
       return False, {}
 
-    if experiment.use_multiple_workers:
-      if experiment.gpu_settings == 'forcemultigpu':
-        if total_len > 1:
-          return True, free_worker_devices
-        else:
-          return False, {}
-      else:
-        if total_len > 0:
-          return True, free_worker_devices
-        else:
-          return False, {}
+    if experiment.use_multiple_worker:
+      return True, free_worker_devices
+
+    if experiment.gpu_settings == 'forcesinglegpu':
+      # Select worker with fewest devices available
+      suitable_worker = None
+      num_devices = 99999
+      for worker, device_indices in free_worker_devices.items():
+        if len(device_indices) < num_devices:
+          suitable_worker = worker
+          num_devices = len(device_indices)
+
+      return True, {suitable_worker: free_worker_devices[suitable_worker]}
     else:
-      if experiment.gpu_settings == 'forcesinglegpu':
-        # Select worker with fewest devices available
-        suitable_worker = None
-        num_devices = 99999
-        for worker, device_indices in free_worker_devices.items():
-          if len(device_indices) < num_devices:
-            suitable_worker = worker
-            num_devices = len(device_indices)
-
-        return True, {suitable_worker: free_worker_devices[suitable_worker]}
-
-      else:
-        # Select worker with most devices available
-        suitable_worker = None
-        num_devices = 0
-        for worker, device_indices in free_worker_devices.items():
-          if len(device_indices) > num_devices:
-            suitable_worker = worker
-            num_devices = len(device_indices)
-
-        if experiment.gpu_settings == 'forcemultigpu':
-          if num_devices > 1:
-            return True, {
-              suitable_worker: free_worker_devices[suitable_worker]}
-          else:
-            return False, {}
-        else:
-          # Use available
-          return True, {suitable_worker: free_worker_devices[suitable_worker]}
+      # Select worker with most devices available
+      suitable_worker = None
+      num_devices = 0
+      for worker, device_indices in free_worker_devices.items():
+        if len(device_indices) > num_devices:
+          suitable_worker = worker
+          num_devices = len(device_indices)
+      return True, {suitable_worker: free_worker_devices[suitable_worker]}
 
   # Returns a list of tuples of (experiment_id, reason))
   def _get_invalid_experiments(self):

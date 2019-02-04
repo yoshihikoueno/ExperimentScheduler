@@ -1,5 +1,9 @@
-*** DONE  Implement experiment time limit
+* TODO  Implement Workstation Scheduling System
+** DONE  Implement experiment time limit
     CLOSED: [2019-02-01 Fri 12:46]
 
-*** TODO  Allow restarting scheduler from previous state
-*** TODO  Enable starting multiple experiments at once
+** TODO  [0/2]  Allow restarting scheduler from previous state
+*** TODO  Implement experiment restarting
+*** TODO  Save state in pickle file
+** TODO  Enable starting multiple experiments at once
+** TODO  Implement experiment monitoring

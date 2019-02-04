@@ -33,8 +33,8 @@ class ExperimentBuilder():
       return False, 'Invalid development framework.'
     if 'gpusettings' not in experiment_dict:
       return False, 'GPU settings missing.'
-    if experiment_dict['gpusettings'] not in ['useavailable', 'forcesinglegpu',
-                                              'forcemultigpu']:
+    if experiment_dict['gpusettings'] not in ['useavailable',
+                                              'forcesinglegpu']:
       return False, 'Invalid GPU settings.'
 
     user_name = experiment_dict['username']
