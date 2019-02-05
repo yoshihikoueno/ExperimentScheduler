@@ -17,12 +17,16 @@ class ExperimentBuilder():
       user_name=experiment_dict['username'],
       gpu_settings=experiment_dict['gpusettings'],
       use_multiple_workers='multiworker' in experiment_dict,
+      can_restart='canrestart' in experiment_dict,
+      restart_cmd=experiment_dict['restartcmd'],
       framework=experiment_dict['framework'])
 
   def is_valid_experiment(self, experiment_dict):
-    keys = experiment_dict.keys()
+    keys = list(experiment_dict.keys())
     if 'execcmd' not in keys:
       return False, 'No execution command specified.'
+    if 'restartcmd' not in keys:
+        return False, 'No restart command specified.'
     if 'experimentname' not in keys:
       return False, 'No experiment name specified.'
     if 'username' not in keys:
@@ -37,6 +41,9 @@ class ExperimentBuilder():
                                               'forcesinglegpu']:
       return False, 'Invalid GPU settings.'
 
+    if ('canrestart' not in keys
+        and experiment_dict['gpusettings'] != 'forcesinglegpu'):
+      return False, 'Only single GPU can be used when restart is impossible.'
     user_name = experiment_dict['username']
 
     user_dir = '/home/{}'.format(user_name)

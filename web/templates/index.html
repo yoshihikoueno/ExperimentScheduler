@@ -12,12 +12,6 @@
       <legend>Scheduling an Experiment</legend>
       
       Working directory will be your home directory!<br>
-      
-      Experiment Execution Command:<br>
-      <input type="text" name="execcmd" value="" required><br>
-    
-      Experiment Name:<br>
-      <input type="text" name="experimentname" value="" maxlength="32" required><br>
 
       User Name: <br>
       <select name="username">
@@ -26,17 +20,28 @@
       {% endfor %}
       </select><br>
 
+      Experiment Name:<br>
+      <input type="text" name="experimentname" value="" maxlength="32" required><br>
+
+      Experiment Execution Command:<br>
+      <input type="text" name="execcmd" value="" required><br><br>
+      <fieldset>
+      <input type="checkbox" id="canrestart" name="canrestart" value="canrestart" checked>Can be restarted<br>
+      Experiment Restart Command:<br>
+      <input type="text" id="restartcmd" name="restartcmd" value=""><br>
+      </fieldset>
+
       Development Framework:<br>
       <select name="framework" id="framework">
         <option value="tensorflow">Tensorflow</option>
         <option value="chainer">Chainer</option>
       </select><br>
 
-      <input type="checkbox" id="multiworker" name="multiworker" value="multiworker"> Use multiple workers<br><br>
+      <input type="checkbox" id="multiworker" name="multiworker" value="multiworker">Can use multiple workers<br><br>
       <fieldset>
         <legend>Worker GPU Settings</legend>
-        <input type="radio" id="gpusettings" name="gpusettings" value="forcesinglegpu">Force use only single GPU (per worker)<br>
-        <input type="radio" id="gpusettings" name="gpusettings" value="useavailable" checked>Use what is available (recommended)<br>
+        <input type="radio" id="forcesinglegpu" name="gpusettings" value="forcesinglegpu">Force use only single GPU<br>
+        <input type="radio" id="useavailable" name="gpusettings" value="useavailable" checked>Use what is available (recommended)<br>
       </fieldset><br>
 
       <input type="submit" value="Submit"><br>
@@ -155,7 +160,19 @@
               document.getElementById('multiworker').disabled = true;
               document.getElementById('multiworker').checked = false;
           }
-          
+
+          if (document.getElementById('canrestart').checked) {
+              document.getElementById('restartcmd').disabled = false;
+              document.getElementById('useavailable').disabled = false;
+              document.getElementById('forcesinglegpu').disabled = false;
+          } else {
+              
+              document.getElementById('restartcmd').disabled = true;
+              document.getElementById('restartcmd').value = "";
+              document.getElementById('useavailable').disabled = true;
+              document.getElementById('forcesinglegpu').disabled = true;
+              document.getElementById('forcesinglegpu').checked = true;
+          }
       }
     </script>
 
