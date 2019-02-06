@@ -14,11 +14,11 @@ def init_logger(folder):
 
   sh = logging.StreamHandler(sys.stdout)
   sh.setLevel(logging.DEBUG)
-  sh.setFormatter(formatter)
+ # sh.setFormatter(formatter)
   logging.getLogger().addHandler(sh)
 
   fh = logging.FileHandler(os.path.join(folder, 'scheduler_log_{}'.format(
     datetime.datetime.now())), mode='w')
   fh.setLevel(logging.DEBUG)
-  fh.setFormatter(formatter)
+  #fh.setFormatter(formatter)
   logging.getLogger().addHandler(fh)

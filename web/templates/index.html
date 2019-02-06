@@ -7,7 +7,7 @@
   <body>
     <h1>Workstation Experiment Scheduler</h1>
 
-    <form name="experimentform" oninput="update_form()" method="post">
+    <form name="experimentform" oninput="update_form()" method="post" action="/post">
     <fieldset>
       <legend>Scheduling an Experiment</legend>
       
@@ -111,11 +111,11 @@
         <td>{{e.user_name}}</td>
         <td>{{e.unique_id}}</td>
         <td>
-          <form method="post" name="activeexperimentform" style="display: inline; margin: 0px; padding: 0px">
+          <form method="post" name="activeexperimentform" style="display: inline; margin: 0px; padding: 0px" action="/post">
             <input type="submit" value="Stdout" name="{{e.unique_id}}">
             <input type="submit" value="Stderr" name="{{e.unique_id}}">
           </form>
-          <form method="post" name="activeexperimentform" onsubmit="return confirm('Really stop this experiment?')" style="display: inline; margin: 0px; padding: 0px">
+          <form method="post" name="activeexperimentform" onsubmit="return confirm('Really stop this experiment?')" style="display: inline; margin: 0px; padding: 0px" action="/post">
             <input type="submit" value="Stop" name="{{e.unique_id}}">
           </form>
         </td>
@@ -135,7 +135,7 @@
         <th>Return Code</th>
         <th>Actions</th>
       </tr>
-      <form method="post" name="finishedexperimentform">
+      <form method="post" name="finishedexperimentform" action="/post">
       {% for e in finished_experiments.values() %}
       <tr>
         <td>{{e.start_time}}</td>
