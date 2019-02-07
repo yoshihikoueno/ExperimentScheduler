@@ -71,6 +71,28 @@
       {% endfor %}
     </table><br>
 
+    Waiting Experiments:
+    <table id="waitingexperiments">
+      <tr>
+        <th>Schedule Time</th>
+        <th>Experiment Name</th>
+        <th>User Name</th>
+        <th>Experiment ID</th>
+        <th>Actions</th>
+      </tr>
+      {% for e in waiting_experiments %}
+      <tr>
+        <td>{{e.schedule_time}}</td>
+        <td>{{e.name}}</td>
+        <td>{{e.user_name}}</td>
+        <td>{{e.unique_id}}</td>
+        <td><form method="post" name="activeexperimentform" onsubmit="return confirm('Really stop this experiment?')" style="display: inline; margin: 0px; padding: 0px" action="/post">
+          <input type="submit" value="Stop" name="{{e.unique_id}}">
+        </form></td>
+      </tr>
+      {% endfor %}
+    </table><br>
+
     Pending Experiments:
     <table id="pendingexperiments">
       <tr>
@@ -86,6 +108,9 @@
         <td>{{e.name}}</td>
         <td>{{e.user_name}}</td>
         <td>{{e.unique_id}}</td>
+        <td><form method="post" name="activeexperimentform" onsubmit="return confirm('Really stop this experiment?')" style="display: inline; margin: 0px; padding: 0px" action="/post">
+          <input type="submit" value="Stop" name="{{e.unique_id}}">
+        </form></td>
       </tr>
       {% endfor %}
     </table><br>

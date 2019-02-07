@@ -13,6 +13,10 @@ from task import TaskType
 class Scheduler:
   def __init__(self, workers, user_name_list, logdir, experiment_time_limit):
     assert(experiment_time_limit >= 0)
+    # List of experiments handled as a queue. Contains Experiment objects.
+    # As long as another experiment is running or is in the pending queue
+    # of that same user, experiments will be put in this queue
+    self.waiting_experiments = []
     # List of pending experiments is handled as a queue. Contains Experiment
     # objects
     self.pending_experiments = []
@@ -62,6 +66,8 @@ class Scheduler:
 
     self._stop_invalid_experiments()
 
+    self._handle_waiting_experiments()
+
     if ((datetime.datetime.now() - self._t_last_reorganize).seconds / 3600.0
         > self._reorganize_experiments_interval):
       self._reorganize_experiments()
@@ -82,20 +88,74 @@ class Scheduler:
 
     for task in tasks:
       if task.task_type == TaskType.NEW_EXPERIMENT:
-        experiment = task.kvargs['experiment']
+        new_experiment = task.kvargs['experiment']
+
+        # Check if this experiment should be put in waiting or pending queue.
+        handled = False
+        for experiment in self.pending_experiments:
+          if experiment.user_name == new_experiment.user_name:
+            self.waiting_experiments.append(new_experiment)
+            handled = True
+            break
+
+        if handled:
+          continue
+
+        handled = False
+        for experiment in self.active_experiments.values():
+          if experiment.user_name == new_experiment.user_name:
+            self.waiting_experiments.append(new_experiment)
+            handled = True
+            break
+
+        if handled:
+          continue
+
+        self.pending_experiments.append(new_experiment)
+
         logging.info("Experiment '{}' of user '{}' queued.".format(
-          experiment.name, experiment.user_name))
-        self.pending_experiments.append(experiment)
+          new_experiment.name, new_experiment.user_name))
+
       elif task.task_type == TaskType.STOP_EXPERIMENT:
-        experiment_id = int(task.kvargs['experiment_id'])
+        experiment_id = task.kvargs['experiment_id']
+        stop_experiment = False
+        # Check if in waiting queue
+        for i, experiment in enumerate(self.waiting_experiments):
+          if experiment.unique_id == experiment_id:
+            logging.info("Stop request from host '{}' for experiment '{}' from user '{}'".format(
+              task.kvargs['host'], experiment.name,
+              experiment.user_name))
+            del self.waiting_experiments[i]
+            stop_experiment = True
+            break
+
+        if stop_experiment is True:
+          continue
+
+         # Check if in pending queue
+        for i, experiment in enumerate(self.pending_experiments):
+          if experiment.unique_id == experiment_id:
+            logging.info("Stop request from host '{}' for experiment '{}' from user '{}'".format(
+              task.kvargs['host'], experiment.name,
+              experiment.user_name))
+            del self.pending_experiments[i]
+            stop_experiment = True
+            break
+
+        if stop_experiment is True:
+          continue
+
+        # Check if active
         if experiment_id in self._active_experiment_clusters:
-          experiment = self.active_experiments[experiment_id]
-          logging.info("""Stop request from host '{}' for experiment
-            '{}' from user '{}'""".format(
-              task.kvargs['host'], experiment.name, experiment.user_name))
+          stop_experiment = self.active_experiments[experiment_id]
+
+        if stop_experiment is not None:
+          logging.info("Stop request from host '{}' for experiment '{}' from user '{}'".format(
+            task.kvargs['host'], stop_experiment.name,
+            stop_experiment.user_name))
           self._stop_experiment(experiment_id, 'Killed: Web request')
         else:
-          logging.info('ID not there')
+          logging.debug('ID not there')
 
       else:
         logging.error("Task {} not implemented!".format(task.task_type))
@@ -111,6 +171,34 @@ class Scheduler:
     invalid_experiments = self._get_invalid_experiments()
     for experiment_id, reason in invalid_experiments:
       self._stop_experiment(experiment_id, reason)
+
+  def _handle_waiting_experiments(self):
+    # Check if we can move an experiment from waiting to pending queue
+    move_indices = []
+    for i, waiting_experiment in enumerate(self.waiting_experiments):
+      continue_wait = False
+      for experiment in self.pending_experiments:
+        if experiment.user_name == waiting_experiment.user_name:
+          continue_wait = True
+          break
+
+      if continue_wait is True:
+        continue
+
+      for experiment in self.active_experiments.values():
+        if experiment.user_name == waiting_experiment.user_name:
+          continue_wait = True
+          break
+
+      if continue_wait is False:
+        move_indices.append(i)
+        self.pending_experiments.append(waiting_experiment)
+
+    # We need to delete some from the waiting list
+    move_indices.sort()
+    move_indices[::-1]
+    for i in move_indices:
+      del self.waiting_experiments[i]
 
   # This function reassigns devices among currently running and pending
   # experiments, so that each experiments gets a fair amount of computational

@@ -38,7 +38,6 @@ class WebInterface():
               'Used', active_experiment_to_color[
                 scheduler_ref.workers[worker].get_experiment_id(column)]))
 
-      print(workstation_load_table_content)
       max_num_gpu = 0
       for worker in scheduler_ref.workers.values():
         if len(worker.device_states) > max_num_gpu:
@@ -52,6 +51,7 @@ class WebInterface():
         active_experiment_to_color=active_experiment_to_color,
         form_success=success, workers=scheduler_ref.workers,
         user_name_list=scheduler_ref.user_name_list,
+        waiting_experiments=scheduler_ref.waiting_experiments,
         pending_experiments=scheduler_ref.pending_experiments,
         active_experiments=scheduler_ref.active_experiments,
         finished_experiments=scheduler_ref.finished_experiments)
