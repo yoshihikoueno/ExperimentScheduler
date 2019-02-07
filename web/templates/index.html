@@ -58,19 +58,14 @@
     <table>
       <tr>
         <th>Host</th>
-        {% for device_index in range(num_devices_per_worker) %}
+        {% for device_index in range(max_num_gpu) %}
         <th>GPU {{device_index}}</th>
         {% endfor %}
       </tr>
-      {% for worker in workers.values() %}
+      {% for row in workstation_load_table_content %}
       <tr>
-        <td>{{worker.host}}</td>
-        {% for device_state in worker.device_states %}
-        {% if device_state %}
-        <td style="background-color: green;">Free</td>
-        {% else %}
-        <td style="background-color: red;">Used</td>
-        {% endif %}
+        {% for col in row %}
+        <td style="background-color: {{col[1]}};">{{col[0]}}</td>
         {% endfor %}
       </tr>
       {% endfor %}
@@ -104,12 +99,12 @@
         <th>Experiment ID</th>
         <th>Actions</th>
       </tr>
-      {% for e in active_experiments.values() %}
+      {% for id, e in active_experiments.items() %}
       <tr>
         <td>{{e.start_time}}</td>
         <td>{{e.name}}</td>
         <td>{{e.user_name}}</td>
-        <td>{{e.unique_id}}</td>
+        <td style="background-color: {{active_experiment_to_color[id]}};">{{e.unique_id}}</td>
         <td>
           <form method="post" name="activeexperimentform" style="display: inline; margin: 0px; padding: 0px" action="/post">
             <input type="submit" value="Stdout" name="{{e.unique_id}}">

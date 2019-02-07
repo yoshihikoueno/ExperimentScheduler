@@ -7,7 +7,7 @@ import task
 
 
 class WebInterface():
-  def __init__(self, scheduler_ref, num_devices_per_worker):
+  def __init__(self, scheduler_ref):
     self.app = flask.Flask(__name__)
     self.app.secret_key = os.urandom(16)
 
@@ -16,10 +16,40 @@ class WebInterface():
       msg = flask.session['msg'] if 'msg' in flask.session else ''
       success = msg == 'Success.'
 
+      color_list = ['red', 'green', 'blue', 'gold', 'orange', 'olive',
+                    'violet', 'indigo']
+      active_experiment_to_color = dict()
+      for i, experiment_id in enumerate(list(
+          scheduler_ref.active_experiments.keys())):
+        active_experiment_to_color[experiment_id] = color_list[
+          i % len(color_list)]
+
+      workstation_load_table_content = []
+      for row in range(len(scheduler_ref.workers)):
+        worker = list(scheduler_ref.workers.keys())[row]
+        workstation_load_table_content.append([
+          (worker, '')])
+        for column in range(len(list(
+            scheduler_ref.workers.values())[row].device_states)):
+          if (scheduler_ref.workers[worker].device_states[column] is True):
+            workstation_load_table_content[row].append(('Free', ''))
+          else:
+            workstation_load_table_content[row].append((
+              'Used', active_experiment_to_color[
+                scheduler_ref.workers[worker].get_experiment_id(column)]))
+
+      print(workstation_load_table_content)
+      max_num_gpu = 0
+      for worker in scheduler_ref.workers.values():
+        if len(worker.device_states) > max_num_gpu:
+          max_num_gpu = len(worker.device_states)
+
       return flask.render_template(
         'index.html',
         form_msg=flask.session['msg'] if msg in flask.session else '',
-        num_devices_per_worker=num_devices_per_worker,
+        workstation_load_table_content=workstation_load_table_content,
+        max_num_gpu=max_num_gpu,
+        active_experiment_to_color=active_experiment_to_color,
         form_success=success, workers=scheduler_ref.workers,
         user_name_list=scheduler_ref.user_name_list,
         pending_experiments=scheduler_ref.pending_experiments,

@@ -27,6 +27,14 @@ class WorkerInterface:
   def device_states(self):
     return self._device_states
 
+  # Get the experiment id running on device with device_index
+  def get_experiment_id(self, device_index):
+    for experiment, device_indices in self._active_experiments.values():
+      if device_index in device_indices:
+        return experiment.unique_id
+
+    assert(False)
+
   def shutdown(self):
     for p in self._tf_server_processes.values():
       logging.info("Terminating TF Server Process.")

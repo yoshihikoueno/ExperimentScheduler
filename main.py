@@ -52,9 +52,7 @@ def run():
     workers=workers, user_name_list=user_name_list,
     logdir=args.logdir, experiment_time_limit=experiment_time_limit)
 
-  web_interface = wi.WebInterface(
-    scheduler_ref=experiment_scheduler,
-    num_devices_per_worker=num_devices_per_worker)
+  web_interface = wi.WebInterface(scheduler_ref=experiment_scheduler)
 
   public = args.public
   # Start web server thread
