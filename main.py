@@ -26,7 +26,7 @@ def run():
 
   logger.init_logger(args.logdir)
 
-  num_devices_per_worker = 1
+  num_devices_per_worker = 4
   # In hours, 0 for no limit
   experiment_time_limit = 12
   initial_tf_port = 2222
@@ -34,7 +34,7 @@ def run():
   # have that many ports
   tf_ports = list(range(initial_tf_port,
                         initial_tf_port + num_devices_per_worker))
-  hosts = ['127.0.0.1']
+  hosts = ['127.0.0.1', '127.0.0.2', '127.0.0.3', '127.0.0.4']
 
   user_name_list = []
   group_database = grp.getgrnam('researchers')

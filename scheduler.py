@@ -35,8 +35,8 @@ class Scheduler:
     self._logdir = logdir
     # In hours, 0 means no limit
     self._experiment_time_limit = experiment_time_limit
-    # In hours, 0 means no reorganization
-    self._reorganize_experiments_interval = 0.5
+    # In hours, 0 means reorganization at every update step
+    self._reorganize_experiments_interval = 0
     self._t_last_reorganize = datetime.datetime.now()
 
     # Register shutdown callback
@@ -119,7 +119,7 @@ class Scheduler:
     # Reset all devices
     free_worker_to_devices = dict()
     num_free_devices = 0
-    for worker in self.workers:
+    for worker in self.workers.values():
       free_worker_to_devices[worker.host] = len(worker.device_states)
       num_free_devices += len(worker.device_states)
 
@@ -131,7 +131,7 @@ class Scheduler:
     # or are assigned only one device get the same assignment as before
     for i, experiment in enumerate(active_experiment_list):
       if (experiment.can_restart is False
-          or experiment.gpusettings == 'forcesinglegpu'):
+          or experiment.gpu_settings == 'forcesinglegpu'):
         experiment_id_to_device_assignments[experiment.unique_id] = (
           self._active_experiment_clusters[experiment.unique_id])
         for worker, num_devices in \
@@ -152,55 +152,67 @@ class Scheduler:
     # them after all multi GPU experiments, but still we want to reserve a
     # device of course.
     reserved_devices = []
-    while num_free_devices > 0 + len(reserved_devices):
-      experiment = combined_experiment_list[experiment_list_index]
-      if experiment.gpusettings == 'forcesinglegpu':
-        if experiment_list_index not in reserved_devices:
-          reserved_devices.append(experiment_list_index)
+    assignment_occured = True
+    while assignment_occured:
+      assignment_occured = False
+      if num_free_devices <= 0 + len(reserved_devices):
+        break
 
-      else:
-        # First, try to assign a device from a worker where this experiment
-        # is already present
-        if experiment.unique_id in experiment_id_to_device_assignments:
-          device_assigned = False
-          for worker, num_devices in experiment_id_to_device_assignments[
-              experiment.unique_id].items():
-            if worker in free_worker_to_devices:
-              # We found a suitable worker device
-              experiment_id_to_device_assignments[experiment.unique_id][
-                worker] += 1
-              free_worker_to_devices[worker] -= 1
-              num_free_devices -= 1
-              assert(free_worker_to_devices >= 0)
-              if free_worker_to_devices[worker] == 0:
-                del free_worker_to_devices[worker]
+      for experiment_list_index in range(len(combined_experiment_list)):
+        experiment = combined_experiment_list[experiment_list_index]
+        if experiment.gpu_settings == 'forcesinglegpu':
+          if experiment_list_index not in reserved_devices:
+            reserved_devices.append(experiment_list_index)
+        else:
+          # First, try to assign a device from a worker where this experiment
+          # is already present
+          if experiment.unique_id in experiment_id_to_device_assignments:
+            device_assigned = False
+            for worker, num_devices in experiment_id_to_device_assignments[
+                experiment.unique_id].items():
+              if worker in free_worker_to_devices:
+                # We found a suitable worker device
+                experiment_id_to_device_assignments[experiment.unique_id][
+                  worker] += 1
+                free_worker_to_devices[worker] -= 1
+                num_free_devices -= 1
+                assert(free_worker_to_devices[worker] >= 0)
+                if free_worker_to_devices[worker] == 0:
+                  del free_worker_to_devices[worker]
 
-              device_assigned = True
+                device_assigned = True
 
-              break
-          if device_assigned is True:
-            # We are done with this experiment for now
-            experiment_list_index = ((experiment_list_index + 1)
-                                     % len(combined_experiment_list))
-            continue
+                break
+            if device_assigned is True:
+              # We are done with this experiment for now
+              assignment_occured = True
+              continue
 
-      # Assign to the worker with the most free devices
-      suitable_worker = None
-      num_max_devices = 0
-      for worker, num_devices in free_worker_to_devices.items():
-        if num_devices > num_max_devices:
-          num_max_devices = num_devices
-          suitable_worker = worker
+        if (not experiment.use_multiple_workers
+            and experiment.unique_id in experiment_id_to_device_assignments):
+          # We were not able to assign to the same worker, but are unable to
+          # assign to other workers. This experiment cannot get any
+          # more experiments
+          continue
 
-      experiment_id_to_device_assignments[experiment.unique_id][
-        suitable_worker] = 1
-      free_worker_to_devices[suitable_worker] -= 1
-      num_free_devices -= 1
-      if free_worker_to_devices[suitable_worker] == 0:
-        del free_worker_to_devices[suitable_worker]
+        # Assign to the worker with the most free devices
+        suitable_worker = None
+        num_max_devices = 0
+        for worker, num_devices in free_worker_to_devices.items():
+          if num_devices > num_max_devices:
+            num_max_devices = num_devices
+            suitable_worker = worker
 
-      experiment_list_index = ((experiment_list_index + 1)
-                               % len(combined_experiment_list))
+        if experiment.unique_id not in experiment_id_to_device_assignments:
+          experiment_id_to_device_assignments[experiment.unique_id] = dict()
+
+        experiment_id_to_device_assignments[experiment.unique_id][
+          suitable_worker] = 1
+        free_worker_to_devices[suitable_worker] -= 1
+        num_free_devices -= 1
+        assignment_occured = True
+        if free_worker_to_devices[suitable_worker] == 0:
+          del free_worker_to_devices[suitable_worker]
 
     # Handle reserved devices
     for experiment_index in reserved_devices:
@@ -226,9 +238,9 @@ class Scheduler:
           restart_list.append(self.active_experiments[experiment_id])
       else:
         found_experiment = False
-        for i in range(len(self.pending_experiment_list)):
-          if self.pending_experiment_list[i].unique_id == experiment_id:
-            start_list.append(self.pending_experiment_list.pop(i))
+        for i in range(len(self.pending_experiments)):
+          if self.pending_experiments[i].unique_id == experiment_id:
+            start_list.append(self.pending_experiments.pop(i))
             found_experiment = True
             break
 
@@ -266,9 +278,8 @@ class Scheduler:
 
   def _start_experiment(self, experiment, worker_to_devices,
                         is_restart):
-    worker_hosts, num_devices_list = worker_to_devices.items()
-    worker_hosts = list(worker_hosts)
-    num_devices_list = list(num_devices_list)
+    worker_hosts = list(worker_to_devices.keys())
+    num_devices_list = list(worker_to_devices.values())
 
     if experiment.framework == 'tensorflow':
       # Build cluster config
@@ -293,7 +304,7 @@ class Scheduler:
       tf_config_env = {'cluster': cluster_config, 'task': task_config}
       self.workers[worker_hosts[0]].start_experiment(
         experiment, num_devices=num_devices_list[0],
-        tf_config_env=tf_config_env)
+        tf_config_env=tf_config_env, is_restart=is_restart)
 
     else:
       # Chainer

@@ -18,4 +18,5 @@ class Experiment():
     self.finish_time = None
     # Can be 'killed: <reason>', 'success', 'error: <code>'
     self.finish_return_code = None
-    self.unique_id = hash(self.name + self.user_name + str(self.schedule_time))
+    self.unique_id = str(hash(self.name + self.user_name + str(
+      self.schedule_time)))

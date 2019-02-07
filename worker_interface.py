@@ -76,8 +76,9 @@ class WorkerInterface:
 
     env = self._get_env(device_indices, tf_config_env)
 
-    cmd = ('ssh -t {} python3 ExperimentScheduler/start_tf_server.py'
-           .format(self.host))
+    #cmd = ('ssh -t {} python3 ExperimentScheduler/start_tf_server.py'
+    #       .format(self.host))
+    cmd = ('python3 ExperimentScheduler/start_tf_server.py')
 
     p = subprocess.Popen(cmd, env=env, shell=True)
 
@@ -99,15 +100,20 @@ class WorkerInterface:
 
     del self._tf_server_processes[experiment_id]
 
-  def start_experiment(self, experiment, num_devices, tf_config_env):
+  def start_experiment(self, experiment, num_devices, tf_config_env,
+                       is_restart):
     assert(experiment.unique_id not in self._active_experiments)
 
     # Assign devices
-    device_indices = self._assign_free_devices(num_devices)
+    device_indices = self._assign_free_device_indices(num_devices)
 
     env = self._get_env(device_indices, tf_config_env)
 
-    cmd = 'ssh -t {} {}'.format(self.host, experiment.exec_cmd)
+    #cmd = 'ssh -t {} {}'.format(self.host, experiment.exec_cmd)
+    if is_restart:
+      cmd = '{}'.format(experiment.restart_cmd)
+    else:
+      cmd = '{}'.format(experiment.exec_cmd)
 
     # Create log files for this experiment
     with open(os.path.join(self._logdir, '{}_stdout'.format(
