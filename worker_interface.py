@@ -7,7 +7,8 @@ import logging
 class WorkerInterface:
   def __init__(self, host, tf_ports, num_devices, logdir):
     self.host = host
-    self.device_states = [True] * num_devices
+    # Contains booleans whether the device at its index is free or not
+    self._device_states = [True] * num_devices
 
     # Maps experiment_id to a tuple of (process, port, device_ids)
     self._tf_server_processes = dict()
@@ -21,6 +22,10 @@ class WorkerInterface:
     self._used_tf_ports = []
 
     self._logdir = logdir
+
+  @property
+  def device_states(self):
+    return self._device_states
 
   def shutdown(self):
     for p in self._tf_server_processes.values():
@@ -55,7 +60,7 @@ class WorkerInterface:
 
     return res
 
-  def start_tf_server(self, experiment_id, device_indices, tf_config_env):
+  def start_tf_server(self, experiment_id, num_devices, tf_config_env):
     assert(experiment_id not in self._tf_server_processes)
 
     # Extract port from config
@@ -66,10 +71,8 @@ class WorkerInterface:
 
     self._used_tf_ports.append(port)
 
-    # Mark relevant devices as used
-    for device_index in device_indices:
-      assert(self.device_states[device_index] is True)
-      self.device_states[device_index] = False
+    # Assign devices
+    device_indices = self._assign_free_device_indices(num_devices)
 
     env = self._get_env(device_indices, tf_config_env)
 
@@ -96,13 +99,11 @@ class WorkerInterface:
 
     del self._tf_server_processes[experiment_id]
 
-  def start_experiment(self, experiment, device_indices, tf_config_env):
+  def start_experiment(self, experiment, num_devices, tf_config_env):
     assert(experiment.unique_id not in self._active_experiments)
 
-    # Mark devices as used
-    for device_index in device_indices:
-      assert(self.device_states[device_index] is True)
-      self.device_states[device_index] = False
+    # Assign devices
+    device_indices = self._assign_free_devices(num_devices)
 
     env = self._get_env(device_indices, tf_config_env)
 
@@ -147,6 +148,19 @@ class WorkerInterface:
     del self._active_experiments[experiment_id]
 
     return return_code
+
+  def _assign_free_device_indices(self, num_devices):
+    device_indices = []
+    for i, device_state in enumerate(self._device_states):
+      if device_state is True:
+        device_indices.append(i)
+        self._device_states[i] = False
+        if len(device_indices) == num_devices:
+          break
+
+    assert(len(device_indices) == num_devices)
+
+    return device_indices
 
   def _get_env(self, device_indices, tf_config_env):
     env = os.environ.copy()
