@@ -5,36 +5,53 @@ import logging
 import time
 import os
 
+from google.protobuf import text_format
+
 import scheduler
 import worker_interface
 from utils import logger
 from web import web_interface as wi
+from protos import scheduler_config_pb2
 
 # Parse CL arguments
 parser = argparse.ArgumentParser()
 parser.add_argument('logdir',
                     help="Directory where all log files should be stored")
+parser.add_argument('config',
+                    help="Config file for the scheduler")
 parser.add_argument('--public', action='store_true',
                     help='Whether to publish web server to the local network')
 
 args = parser.parse_args()
 
 
+def load_config(config_path):
+  scheduler_config = scheduler_config_pb2.SchedulerConfig()
+  with open(config_path, 'r') as f:
+    text_format.Merge(f.read(), scheduler_config)
+
+  return scheduler_config
+
+
 def run():
   if not os.path.exists(args.logdir):
     raise ValueError("Invalid logdir.")
+  if not os.path.exists(args.config):
+    raise ValueError("Invalid config file.")
 
   logger.init_logger(args.logdir)
 
-  num_devices_per_worker = 4
+  config = load_config(args.config)
+
+  num_devices_per_worker = config.num_devices_per_worker
   # In hours, 0 for no limit
-  experiment_time_limit = 12
-  initial_tf_port = 2222
+  experiment_time_limit = config.experiment_time_limit
+  initial_tf_port = config.initial_tf_port
   # We could run up to one tf server per device on one worker, so we need to
   # have that many ports
   tf_ports = list(range(initial_tf_port,
                         initial_tf_port + num_devices_per_worker))
-  hosts = ['127.0.0.1', '127.0.0.2', '127.0.0.3', '127.0.0.4']
+  hosts = config.host_addresses
 
   user_name_list = []
   group_database = grp.getgrnam('researchers')
@@ -50,7 +67,8 @@ def run():
 
   experiment_scheduler = scheduler.Scheduler(
     workers=workers, user_name_list=user_name_list,
-    logdir=args.logdir, experiment_time_limit=experiment_time_limit)
+    logdir=args.logdir, experiment_time_limit=experiment_time_limit,
+    reorganize_experiments_interval=config.reorganize_experiments_interval)
 
   web_interface = wi.WebInterface(scheduler_ref=experiment_scheduler)
 
@@ -62,7 +80,7 @@ def run():
   logging.info('Web Interface Thread started.')
 
   # Specify updates per second
-  ups = 0.2
+  ups = config.ups
   frame_time = 1.0 / ups
   t0 = time.time()
   t_accumulated = 0

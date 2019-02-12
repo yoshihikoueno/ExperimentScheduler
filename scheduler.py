@@ -11,7 +11,8 @@ from task import TaskType
 
 
 class Scheduler:
-  def __init__(self, workers, user_name_list, logdir, experiment_time_limit):
+  def __init__(self, workers, user_name_list, logdir, experiment_time_limit,
+               reorganize_experiments_interval):
     assert(experiment_time_limit >= 0)
     # List of experiments handled as a queue. Contains Experiment objects.
     # As long as another experiment is running or is in the pending queue
@@ -40,7 +41,7 @@ class Scheduler:
     # In hours, 0 means no limit
     self._experiment_time_limit = experiment_time_limit
     # In hours, 0 means reorganization at every update step
-    self._reorganize_experiments_interval = 0
+    self._reorganize_experiments_interval = reorganize_experiments_interval
     self._t_last_reorganize = datetime.datetime.now()
 
     # Register shutdown callback
@@ -101,7 +102,6 @@ class Scheduler:
         if handled:
           continue
 
-        handled = False
         for experiment in self.active_experiments.values():
           if experiment.user_name == new_experiment.user_name:
             self.waiting_experiments.append(new_experiment)
