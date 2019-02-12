@@ -84,11 +84,10 @@ class WorkerInterface:
 
     env = self._get_env(device_indices, tf_config_env)
 
-    #cmd = ('ssh -t {} python3 ExperimentScheduler/start_tf_server.py'
-    #       .format(self.host))
-    cmd = ('python3 ExperimentScheduler/start_tf_server.py')
+    cmd = ['ssh', '-t', self.host, 'python3',
+           'ExperimentScheduler/start_tf_server.py']
 
-    p = subprocess.Popen(cmd, env=env, shell=True)
+    p = subprocess.Popen(cmd, env=env, shell=False, stdout=None, stderr=None)
 
     self._tf_server_processes[experiment_id] = (p, port, device_indices)
 
@@ -117,11 +116,10 @@ class WorkerInterface:
 
     env = self._get_env(device_indices, tf_config_env)
 
-    #cmd = 'ssh -t {} {}'.format(self.host, experiment.exec_cmd)
     if is_restart:
-      cmd = '{}'.format(experiment.restart_cmd)
+      cmd = ['ssh', '-t', self.host, experiment.restart_cmd]
     else:
-      cmd = '{}'.format(experiment.exec_cmd)
+      cmd = ['ssh', '-t', self.host, experiment.exec_cmd]
 
     # Create log files for this experiment
     with open(os.path.join(self._logdir, '{}_stdout'.format(
@@ -129,8 +127,8 @@ class WorkerInterface:
           self._logdir, '{}_stderr'.format(experiment.unique_id)),
                                                    'w') as err:
       self._experiment_processes[experiment.unique_id] = subprocess.Popen(
-        cmd, env=env, universal_newlines=True,
-        stdout=out, stderr=err, shell=True, cwd='/home/{}'.format(
+        cmd, env=env,
+        stdout=out, stderr=err, shell=False, cwd='/home/{}'.format(
           experiment.user_name))
 
     self._active_experiments[experiment.unique_id] = (

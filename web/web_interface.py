@@ -73,8 +73,8 @@ class WebInterface():
       # Check if it was stdout button
       elif 'Stdout' in list(flask.request.form.values()):
        experiment_id = list(flask.request.form.keys())[0]
-       if (int(experiment_id) in scheduler_ref.active_experiments
-           or int(experiment_id) in scheduler_ref.finished_experiments):
+       if (experiment_id in scheduler_ref.active_experiments
+           or experiment_id in scheduler_ref.finished_experiments):
          log_path = scheduler_ref.get_experiment_stdout_path(experiment_id)
 
          with open(log_path, 'r') as f:
@@ -85,8 +85,8 @@ class WebInterface():
       # Check if it was stderr button
       elif 'Stderr' in list(flask.request.form.values()):
         experiment_id = list(flask.request.form.keys())[0]
-        if (int(experiment_id) in scheduler_ref.active_experiments
-           or int(experiment_id) in scheduler_ref.finished_experiments):
+        if (experiment_id in scheduler_ref.active_experiments
+           or experiment_id in scheduler_ref.finished_experiments):
           log_path = scheduler_ref.get_experiment_stderr_path(experiment_id)
 
           with open(log_path, 'r') as f:
@@ -107,7 +107,6 @@ class WebInterface():
             experiment=experiment)
           scheduler_ref.task_queue.put(t)
 
-      print(msg)
       flask.session['msg'] = msg
 
       return flask.redirect('/')
