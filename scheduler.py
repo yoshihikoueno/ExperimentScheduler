@@ -223,7 +223,7 @@ class Scheduler:
         experiment_id_to_device_assignments[experiment.unique_id] = (
           self._active_experiment_clusters[experiment.unique_id])
         for worker, num_devices in \
-            experiment_id_to_device_assignments[experiment.unique_id]:
+            experiment_id_to_device_assignments[experiment.unique_id].items():
           free_worker_to_devices[worker] -= num_devices
           num_free_devices -= num_devices
           assert(free_worker_to_devices[worker] >= 0)
