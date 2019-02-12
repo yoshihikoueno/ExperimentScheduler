@@ -235,7 +235,6 @@ class Scheduler:
     # Now assign remaining devices in a round-robin fashion
     combined_experiment_list = (active_experiment_list
                                 + self.pending_experiments)
-    experiment_list_index = 0
     # List of experiment indices for single GPU experiments. We want to assign
     # them after all multi GPU experiments, but still we want to reserve a
     # device of course.
@@ -251,6 +250,8 @@ class Scheduler:
         if experiment.gpu_settings == 'forcesinglegpu':
           if experiment_list_index not in reserved_devices:
             reserved_devices.append(experiment_list_index)
+
+          continue
         else:
           # First, try to assign a device from a worker where this experiment
           # is already present
@@ -305,11 +306,12 @@ class Scheduler:
     # Handle reserved devices
     for experiment_index in reserved_devices:
       experiment = combined_experiment_list[experiment_index]
-      worker = free_worker_to_devices.keys()[0]
+      worker = list(free_worker_to_devices.keys())[0]
+      experiment_id_to_device_assignments[experiment.unique_id] = dict()
       experiment_id_to_device_assignments[experiment.unique_id][worker] = 1
       free_worker_to_devices[worker] -= 1
       num_free_devices -= 1
-      assert(free_worker_to_devices >= 0)
+      assert(free_worker_to_devices[worker] >= 0)
       if free_worker_to_devices[worker] == 0:
         del free_worker_to_devices[worker]
 

@@ -45,7 +45,7 @@ class WebInterface():
 
       return flask.render_template(
         'index.html',
-        form_msg=flask.session['msg'] if msg in flask.session else '',
+        form_msg=msg,
         workstation_load_table_content=workstation_load_table_content,
         max_num_gpu=max_num_gpu,
         active_experiment_to_color=active_experiment_to_color,
@@ -107,6 +107,7 @@ class WebInterface():
             experiment=experiment)
           scheduler_ref.task_queue.put(t)
 
+      print(msg)
       flask.session['msg'] = msg
 
       return flask.redirect('/')
