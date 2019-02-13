@@ -87,7 +87,8 @@ class WorkerInterface:
     cmd = ['ssh', '-t', self.host, 'python3',
            'ExperimentScheduler/start_tf_server.py']
 
-    p = subprocess.Popen(cmd, env=env, shell=False, stdout=None, stderr=None)
+    p = subprocess.Popen(cmd, env=env, shell=False, stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE)
 
     self._tf_server_processes[experiment_id] = (p, port, device_indices)
 
@@ -117,9 +118,11 @@ class WorkerInterface:
     env = self._get_env(device_indices, tf_config_env)
 
     if is_restart:
-      cmd = ['ssh', '-t', self.host, experiment.restart_cmd]
+      cmd = ['ssh', '-t', '{}@{}'.format(experiment.user_name, self.host),
+             experiment.restart_cmd]
     else:
-      cmd = ['ssh', '-t', self.host, experiment.exec_cmd]
+      cmd = ['ssh', '-t', '{}@{}'.format(experiment.user_name, self.host),
+             experiment.exec_cmd]
 
     # Create log files for this experiment
     with open(os.path.join(self._logdir, '{}_stdout'.format(
