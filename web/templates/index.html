@@ -26,6 +26,13 @@
       The scheduler will set environment variables <b><i>CUDA_VISIBLE_DEVICES</i></b> and <b><i>TF_CONFIG</i></b> to give
       the program information about the available environment.
 
+      {% if max_time %}
+      <br><br>
+      There is currently a maximum time set until your program will be stopped.
+      It is currently set at {{max_time}} hours.
+      {% endif %}
+
+
       <h2>Usage Notes</h2>
       <ul>
         <li>Please make sure that you fully utilize the resources that you are assigned, otherwise the scheduler might stop your program.</li>

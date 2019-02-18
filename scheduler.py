@@ -47,6 +47,10 @@ class Scheduler:
     # Register shutdown callback
     atexit.register(self.shutdown)
 
+  @property
+  def experiment_time_limit(self):
+    return self._experiment_time_limit
+
   def get_experiment_stdout_path(self, experiment_id):
     return os.path.join(self._logdir, '{}_stdout'.format(experiment_id))
 

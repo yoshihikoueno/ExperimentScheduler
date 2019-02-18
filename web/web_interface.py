@@ -60,7 +60,8 @@ class WebInterface():
         pending_experiments=scheduler_ref.pending_experiments,
         active_experiments=scheduler_ref.active_experiments,
         finished_experiments=scheduler_ref.finished_experiments,
-        css_file=self.css_file)
+        css_file=self.css_file,
+        max_time=scheduler_ref.experiment_time_limit)
 
     @self.app.route('/post', methods=['GET', 'POST'])
     def post():
