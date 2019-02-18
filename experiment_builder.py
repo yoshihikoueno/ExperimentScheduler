@@ -32,7 +32,7 @@ def is_valid_experiment(experiment_dict):
     return False, 'No user name specified.'
   if 'framework' not in experiment_dict:
     return False, 'Framework missing.'
-  if experiment_dict['framework'] not in ['tensorflow', 'chainer']:
+  if experiment_dict['framework'] not in ['tensorflow', 'other']:
     return False, 'Invalid development framework.'
   gpusettings = (experiment_dict['gpusettings'] if 'gpusettings'
                  in experiment_dict else 'forcesinglegpu')

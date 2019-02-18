@@ -1,47 +1,118 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='styles/index.css')}}">
+    <link rel="stylesheet" type="text/css" href="static/{{css_file}}">
     <title>Workstation Experiment Scheduler</title>
   </head>
   <body>
     <h1>Workstation Experiment Scheduler</h1>
 
+    <p>
+      Here you can schedule programs to be run on the Kumazawa Lab workstation.<br><br>
+
+      The scheduler tries to maximize resource usage, while keeping waiting times for everyone low.
+      Therefore it aims to run as many programs as possible in parallel.
+
+      <br><br>
+      To account for both a low and a high number of queued programs, it might be necessary to redistribute the available resources
+      among pending and active experiments, leading to situations where your program will be restarted.
+      If your program cannot restart and continue where it left off, you will only be assigned one GPU at maximum.
+
+      <br><br>
+      Each user can only have one program in pending and active experiments. You can still queue further experiments,
+      however they will be put into the waiting queue until your other experiment finishes.
+
+      <br><br>
+      The scheduler will set environment variables <b><i>CUDA_VISIBLE_DEVICES</i></b> and <b><i>TF_CONFIG</i></b> to give
+      the program information about the available environment.
+
+      <h2>Usage Notes</h2>
+      <ul>
+        <li>Please make sure that you fully utilize the resources that you are assigned, otherwise the scheduler might stop your program.</li>
+        <li>Do not use resources you are not assigned to.</li>
+        <li>Please try to keep CPU usage low in your program. E.g. do preprocessing or evaluation on your own computer</li>
+        <li>Please try to avoid unnecessary load. E.g. training after your model is already converged, or too loose hyper parameter search</li>
+        <li>And of course only use the workstation for your research!</li>
+      </ul>
+    </p>
+
     <form name="experimentform" oninput="update_form()" method="post" action="/post" autocomplete="off">
     <fieldset>
       <legend>Scheduling an Experiment</legend>
-      
-      Working directory will be your home directory!<br>
 
-      User Name: <br>
-      <select name="username">
-      {% for user_name in user_name_list %}
-      <option value="{{user_name}}">{{user_name}}</option>
-      {% endfor %}
-      </select><br>
+     <div class="tooltip">User Name:
+       <span class="tooltiptext">
+         Please only select your own user name. If it is not in the list, contact
+         the server admin.
+       </span>
+     </div>
+     <br>
+     <select name="username">
+       {% for user_name in user_name_list %}
+       <option value="{{user_name}}">{{user_name}}</option>
+       {% endfor %}
+     </select><br>
 
-      Experiment Name:<br>
-      <input type="text" name="experimentname" value="" maxlength="32" required><br>
+     <div class="tooltip">Experiment Name:
+       <span class="tooltiptext">
+         Optional experiment name, so that you can still identify it later.
+       </span>
+     </div>
+     <br>
+     <input type="text" name="experimentname" value="" maxlength="32" required><br>
 
-      Experiment Execution Command:<br>
-      <input type="text" name="execcmd" value="" required><br><br>
-      <fieldset>
-      <input type="checkbox" id="canrestart" name="canrestart" value="canrestart" checked>Can be restarted<br>
+     <div class="tooltip">Experiment Execution Command:
+       <span class="tooltiptext">
+         The command to execute to start your program. The working directory is the
+         home directory of the selected user.
+       </span>
+     </div>
+     <br>
+     <input type="text" name="execcmd" value="" required><br><br>
+
+     <fieldset>
+       <input type="checkbox" id="canrestart" name="canrestart" value="canrestart" checked>
+       <div class="tooltip">Can be restarted
+         <span class="tooltiptext">
+           Whether it is possible to restart your running program so that it continues from where it stopped. This is necessary
+           so that the scheduler can rearrange GPU assignments and optimize the overall resource usage.
+           Therefore if you cannot restart, you will only be assigned one GPU at maximum.
+       </span>
+       </div>
+       <br>
       Experiment Restart Command:<br>
       <input type="text" id="restartcmd" name="restartcmd" value=""><br>
       </fieldset>
 
-      Development Framework:<br>
+     <div class="tooltip">Framework:
+       <span class="tooltiptext">
+         The framework you are using. Multi-worker use is currently only supported on tensorflow
+       </span>
+     </div>
+     <br>
       <select name="framework" id="framework">
         <option value="tensorflow">Tensorflow</option>
-        <option value="chainer">Chainer</option>
+        <option value="other">Other</option>
       </select><br>
 
-      <input type="checkbox" id="multiworker" name="multiworker" value="multiworker">Can use multiple workers<br><br>
+      <input type="checkbox" id="multiworker" name="multiworker" value="multiworker">
+      <div class="tooltip">Can use multiple workers
+       <span class="tooltiptext">
+         Whether your program is able to support multi-worker execution.
+         Currently only distributed tensorflow is supported.
+       </span>
+      </div>
+      <br><br>
       <fieldset>
         <legend>Worker GPU Settings</legend>
-        <input type="radio" id="forcesinglegpu" name="gpusettings" value="forcesinglegpu">Force use only single GPU<br>
-        <input type="radio" id="useavailable" name="gpusettings" value="useavailable" checked>Use what is available (recommended)<br>
+        <input type="radio" id="forcesinglegpu" name="gpusettings" value="forcesinglegpu">
+        <div class="tooltip">Force use single GPU
+       <span class="tooltiptext">
+         If your program is unable to run on multiple GPU, select this option.
+       </span>
+        </div>
+        <br>
+        <input type="radio" id="useavailable" name="gpusettings" value="useavailable" checked>Use what is available<br>
       </fieldset><br>
 
       <input type="submit" value="Submit"><br>

@@ -10,6 +10,11 @@ class WebInterface():
   def __init__(self, scheduler_ref):
     self.app = flask.Flask(__name__)
     self.app.secret_key = os.urandom(16)
+    # We need to provide a unique file name if the css file changed,
+    # so that browsers dont keep an old version of it cached
+    self.css_file = 'styles/index.css?v={}'.format(os.path.getmtime(
+      os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static',
+                   'styles', 'index.css')))
 
     @self.app.route('/', methods=['GET'])
     def index():
@@ -54,7 +59,8 @@ class WebInterface():
         waiting_experiments=scheduler_ref.waiting_experiments,
         pending_experiments=scheduler_ref.pending_experiments,
         active_experiments=scheduler_ref.active_experiments,
-        finished_experiments=scheduler_ref.finished_experiments)
+        finished_experiments=scheduler_ref.finished_experiments,
+        css_file=self.css_file)
 
     @self.app.route('/post', methods=['GET', 'POST'])
     def post():
