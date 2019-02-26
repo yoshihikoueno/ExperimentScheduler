@@ -130,7 +130,7 @@ class WorkerInterface:
       experiment.input_res,
       self.docker_input_res_path) if experiment.input_res != '' else ''
 
-    cmd = ['ssh', '-t', '{}@{}'.format(experiment.user_name, self.host),
+    cmd = ['ssh', '-t', '{}'.format(self.host),
            'echo', '"{}"'.format(experiment.docker_file), '|',
            'docker', 'build', '-t', '{}'.format(experiment.user_name), '-',
            '&&', 'docker', 'run',
