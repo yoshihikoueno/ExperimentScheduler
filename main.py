@@ -1,5 +1,4 @@
 import argparse
-import grp
 import threading
 import logging
 import time
@@ -15,12 +14,15 @@ from protos import scheduler_config_pb2
 
 # Parse CL arguments
 parser = argparse.ArgumentParser()
-parser.add_argument('logdir',
-                    help="Directory where all log files should be stored")
-parser.add_argument('config',
-                    help="Config file for the scheduler")
+parser.add_argument('--logdir',
+                    help="Directory where all log files should be stored",
+                    required=True)
+parser.add_argument('--config',
+                    help="Config file for the scheduler", required=True)
 parser.add_argument('--public', action='store_true',
                     help='Whether to publish web server to the local network')
+parser.add_argument('--port', help='The port to use for the web interface. '
+                    'Defaults to 5000', type=int)
 
 args = parser.parse_args()
 
@@ -39,6 +41,8 @@ def run():
   if not os.path.exists(args.config):
     raise ValueError("Invalid config file.")
 
+  web_port = args.port if args.port else 5000
+
   logger.init_logger(args.logdir)
 
   config = load_config(args.config)
@@ -53,12 +57,6 @@ def run():
                         initial_tf_port + num_devices_per_worker))
   hosts = config.host_addresses
 
-  user_name_list = []
-  group_database = grp.getgrnam('researchers')
-
-  for user in group_database.gr_mem:
-    user_name_list.append(user)
-
   workers = dict()
   for host in hosts:
     workers[host] = worker_interface.WorkerInterface(
@@ -66,15 +64,17 @@ def run():
       logdir=args.logdir)
 
   experiment_scheduler = scheduler.Scheduler(
-    workers=workers, user_name_list=user_name_list,
+    workers=workers,
     logdir=args.logdir, experiment_time_limit=experiment_time_limit,
     reorganize_experiments_interval=config.reorganize_experiments_interval)
 
-  web_interface = wi.WebInterface(scheduler_ref=experiment_scheduler)
+  web_interface = wi.WebInterface(scheduler_ref=experiment_scheduler,
+                                  resource_folder=config.resource_folder)
 
   public = args.public
   # Start web server thread
-  web_thread = threading.Thread(target=web_interface.run, args=(public,))
+  web_thread = threading.Thread(target=web_interface.run,
+                                args=(public, web_port))
   web_thread.daemon = True
   web_thread.start()
   logging.info('Web Interface Thread started.')

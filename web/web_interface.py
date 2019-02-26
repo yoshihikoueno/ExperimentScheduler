@@ -1,26 +1,88 @@
 import os
 
-import flask
+import ldap
+from flask import request, render_template, flash, redirect, \
+    url_for, g, Flask, Response
+from flask_login import current_user, login_required, LoginManager
+from flask_wtf import FlaskForm
 
-import experiment_builder
+import experiment_builder as eb
 import task
+from web.auth.models import User, LoginForm
 
 
 class WebInterface():
-  def __init__(self, scheduler_ref):
-    self.app = flask.Flask(__name__)
+  def __init__(self, scheduler_ref, resource_folder):
+    self.app = Flask(__name__)
+    self.app.config['WTF_CSRF_SECRET_KEY'] = os.urandom(16)
+    self.app.config['LDAP_PROVIDER_URL'] = 'ldap://ipa.kumalab.local:389'
+    # The login manager should store the next value in the session
+    self.app.config['USE_SESSION_FOR_NEXT'] = True
+
     self.app.secret_key = os.urandom(16)
-    # We need to provide a unique file name if the css file changed,
-    # so that browsers dont keep an old version of it cached
-    self.css_file = 'styles/index.css?v={}'.format(os.path.getmtime(
+
+    self.login_manager = LoginManager()
+    self.login_manager.init_app(self.app)
+    self.login_manager.login_view = 'login'
+    self.login_manager.login_message_category = 'info'
+
+    self.conn = ldap.initialize(self.app.config['LDAP_PROVIDER_URL'])
+    #self.conn.set_option(ldap.OPT_X_TLS_DEMAND, True)
+    #self.conn.set_option(ldap.OPT_DEBUG_LEVEL, 0)
+
+    self.css_file = 'base.css?v={}'.format(os.path.getmtime(
       os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static',
-                   'styles', 'index.css')))
+                   'css', 'base.css')))
 
-    @self.app.route('/', methods=['GET'])
-    def index():
-      msg = flask.session['msg'] if 'msg' in flask.session else ''
-      success = msg == 'Success.'
+    self.experiment_builder = eb.ExperimentBuilder(
+      resource_folder=resource_folder)
 
+    @self.login_manager.user_loader
+    def load_user(uid):
+      return User.get_user(self.conn, uid)
+
+    @self.app.before_request
+    def get_current_user():
+      g.user = current_user
+
+    @self.app.route('/')
+    def root():
+      if current_user.is_authenticated:
+        return redirect(url_for('home'))
+      else:
+        return redirect(url_for('login'))
+
+    @self.app.route('/login', methods=['GET', 'POST'])
+    def login():
+      if current_user.is_authenticated:
+        flash("You are already logged in!")
+        return redirect(url_for('home'))
+      else:
+        form = LoginForm(request.form)
+
+        if request.method == 'POST' and form.validate():
+          # Login Request
+          username = request.form.get('username')
+          password = request.form.get('password')
+
+          try:
+            User.try_login(self.conn, username, password)
+          except ldap.INVALID_CREDENTIALS:
+            flash("Invalid username or password. Please try again.", 'danger')
+            return render_template('login.html', form=form,
+                                   css_file=self.css_file)
+
+          flash("You have successfully logged in!", 'success')
+          return redirect(url_for('home'))
+
+        if form.errors:
+          flash(form.errors, 'danger')
+
+        return render_template('login.html', form=form, css_file=self.css_file)
+
+    @self.app.route('/home', methods=['GET'])
+    @login_required
+    def home():
       color_list = ['red', 'green', 'blue', 'gold', 'orange', 'olive',
                     'violet', 'indigo']
       active_experiment_to_color = dict()
@@ -48,77 +110,93 @@ class WebInterface():
         if len(worker.device_states) > max_num_gpu:
           max_num_gpu = len(worker.device_states)
 
-      return flask.render_template(
-        'index.html',
-        form_msg=msg,
+      return render_template(
+        'home.html',
         workstation_load_table_content=workstation_load_table_content,
         max_num_gpu=max_num_gpu,
         active_experiment_to_color=active_experiment_to_color,
-        form_success=success, workers=scheduler_ref.workers,
-        user_name_list=scheduler_ref.user_name_list,
+        workers=scheduler_ref.workers,
         waiting_experiments=scheduler_ref.waiting_experiments,
         pending_experiments=scheduler_ref.pending_experiments,
         active_experiments=scheduler_ref.active_experiments,
         finished_experiments=scheduler_ref.finished_experiments,
         css_file=self.css_file,
-        max_time=scheduler_ref.experiment_time_limit)
+        max_time=scheduler_ref.experiment_time_limit,
+        user_name=current_user.given_name)
 
-    @self.app.route('/post', methods=['GET', 'POST'])
+    @self.app.route('/home/post', methods=['GET', 'POST'])
     def post():
-      if flask.request.method == 'GET':
-        return flask.redirect('/')
+      if not current_user.is_authenticated:
+        return redirect(url_for('login'))
+
+      if request.method == 'GET':
+        return redirect(url_for('home'))
 
       msg = ''
       # Check if it was a stop experiment button
-      if 'Stop' in list(flask.request.form.values()):
+      if 'Stop' in list(request.form.values()):
         # We have to stop an experiment
-        experiment_id = list(flask.request.form.keys())[0]
+        experiment_id = list(request.form.keys())[0]
         t = task.Task(task_type=task.TaskType.STOP_EXPERIMENT,
-                      experiment_id=experiment_id, host=flask.request.host)
+                      experiment_id=experiment_id, host=request.host)
         scheduler_ref.task_queue.put(t)
 
       # Check if it was stdout button
-      elif 'Stdout' in list(flask.request.form.values()):
-       experiment_id = list(flask.request.form.keys())[0]
-       if (experiment_id in scheduler_ref.active_experiments
-           or experiment_id in scheduler_ref.finished_experiments):
-         log_path = scheduler_ref.get_experiment_stdout_path(experiment_id)
+      elif 'Stdout' in list(request.form.values()):
+        experiment_id = list(request.form.keys())[0]
+        if (experiment_id in scheduler_ref.active_experiments
+            or experiment_id in scheduler_ref.finished_experiments):
+          log_path = scheduler_ref.get_experiment_stdout_path(experiment_id)
 
-         with open(log_path, 'r') as f:
-           return flask.Response(f.read(), mimetype='text/plain')
-       else:
-         msg = 'Log not found.'
+          with open(log_path, 'r') as f:
+            return Response(f.read(), mimetype='text/plain')
+        else:
+          flash('Log not found.', 'danger')
 
       # Check if it was stderr button
-      elif 'Stderr' in list(flask.request.form.values()):
-        experiment_id = list(flask.request.form.keys())[0]
+      elif 'Stderr' in list(request.form.values()):
+        experiment_id = list(request.form.keys())[0]
         if (experiment_id in scheduler_ref.active_experiments
-           or experiment_id in scheduler_ref.finished_experiments):
+            or experiment_id in scheduler_ref.finished_experiments):
           log_path = scheduler_ref.get_experiment_stderr_path(experiment_id)
 
           with open(log_path, 'r') as f:
-            return flask.Response(f.read(), mimetype='text/plain')
+            return Response(f.read(), mimetype='text/plain')
         else:
-          msg = 'Log not found.'
+          flash('Log not found.', 'danger')
 
       else:
+        request_dict = dict(request.form)
+        request_dict['username'] = current_user.uid
+        if 'dockerfile' in request.files:
+          request_dict['dockerfile'] = request.files[
+            'dockerfile'].stream.read().decode('UTF-8')
         # Create experiment request
-        success, msg = experiment_builder.is_valid_experiment(
-          flask.request.form)
+        success, msg = self.experiment_builder.is_valid_experiment(
+          request_dict)
 
         if success:
-          experiment = experiment_builder.build_experiment(
-            flask.request.form)
+          experiment = self.experiment_builder.build_experiment(
+            request_dict)
           t = task.Task(
             task_type=task.TaskType.NEW_EXPERIMENT,
             experiment=experiment)
           scheduler_ref.task_queue.put(t)
+          flash(msg, 'success')
 
-      flask.session['msg'] = msg
+        else:
+          flash(msg, 'danger')
 
-      return flask.redirect('/')
+      return redirect(url_for('home'))
 
-  def run(self, public):
+    @self.app.route('/logout', methods=['GET', 'POST'])
+    @login_required
+    def logout():
+      User.logout()
+
+      return redirect(url_for('login'))
+
+  def run(self, public, port):
     # Host 0.0.0.0 is required to make server visible in local network.
     host = '0.0.0.0' if public else None
-    self.app.run(debug=False, host=host)
+    self.app.run(debug=False, host=host, port=port)

@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='scheduler.protos',
   syntax='proto2',
   serialized_options=None,
-  serialized_pb=_b('\n\x1dprotos/scheduler_config.proto\x12\x10scheduler.protos\"\xb7\x01\n\x0fSchedulerConfig\x12\x16\n\x0ehost_addresses\x18\x01 \x03(\t\x12\x17\n\x0finitial_tf_port\x18\x02 \x01(\r\x12\x1e\n\x16num_devices_per_worker\x18\x03 \x01(\r\x12\x1d\n\x15\x65xperiment_time_limit\x18\x04 \x01(\x02\x12\x0b\n\x03ups\x18\x05 \x01(\x02\x12\'\n\x1freorganize_experiments_interval\x18\x06 \x01(\x02')
+  serialized_pb=_b('\n\x1dprotos/scheduler_config.proto\x12\x10scheduler.protos\"\xd0\x01\n\x0fSchedulerConfig\x12\x16\n\x0ehost_addresses\x18\x01 \x03(\t\x12\x17\n\x0finitial_tf_port\x18\x02 \x01(\r\x12\x1e\n\x16num_devices_per_worker\x18\x03 \x01(\r\x12\x1d\n\x15\x65xperiment_time_limit\x18\x04 \x01(\x02\x12\x0b\n\x03ups\x18\x05 \x01(\x02\x12\'\n\x1freorganize_experiments_interval\x18\x06 \x01(\x02\x12\x17\n\x0fresource_folder\x18\x07 \x01(\t')
 )
 
 
@@ -74,6 +74,13 @@ _SCHEDULERCONFIG = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='resource_folder', full_name='scheduler.protos.SchedulerConfig.resource_folder', index=6,
+      number=7, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -87,7 +94,7 @@ _SCHEDULERCONFIG = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=52,
-  serialized_end=235,
+  serialized_end=260,
 )
 
 DESCRIPTOR.message_types_by_name['SchedulerConfig'] = _SCHEDULERCONFIG

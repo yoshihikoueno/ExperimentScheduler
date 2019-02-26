@@ -23,6 +23,9 @@ class WorkerInterface:
 
     self._logdir = logdir
 
+    self.docker_input_res_path = '/kw_resources/input_res'
+    self.docker_output_folder_path = '/kw_resources/output_folder'
+
   @property
   def device_states(self):
     return self._device_states
@@ -115,14 +118,26 @@ class WorkerInterface:
     # Assign devices
     device_indices = self._assign_free_device_indices(num_devices)
 
-    env = self._get_env(device_indices, tf_config_env)
+    env_args = self._get_env(device_indices, tf_config_env)
 
-    if is_restart:
-      cmd = ['ssh', '-t', '{}@{}'.format(experiment.user_name, self.host),
-             experiment.restart_cmd]
-    else:
-      cmd = ['ssh', '-t', '{}@{}'.format(experiment.user_name, self.host),
-             experiment.exec_cmd]
+    # Create output folder if not existing
+    if not os.path.exists(experiment.output_folder):
+      os.mkdir(experiment.output_folder)
+    output_folder_arg = '--mount type=bind,source={},target={}'.format(
+      experiment.output_folder, self.docker_output_folder_path)
+
+    input_res_arg = '--mount type=bind,source={},target={}'.format(
+      experiment.input_res,
+      self.docker_input_res_path) if experiment.input_res != '' else ''
+
+    cmd = ['ssh', '-t', '{}@{}'.format(experiment.user_name, self.host),
+           'echo', '"{}"'.format(experiment.docker_file), '|',
+           'docker', 'build', '-t', '{}'.format(experiment.user_name), '-',
+           '&&', 'docker', 'run',
+           '--rm', '--runtime=nvidia', output_folder_arg, input_res_arg,
+           env_args, '{}'.format(experiment.user_name)]
+
+    print(cmd)
 
     # Create log files for this experiment
     with open(os.path.join(self._logdir, '{}_stdout'.format(
@@ -130,9 +145,7 @@ class WorkerInterface:
           self._logdir, '{}_stderr'.format(experiment.unique_id)),
                                                    'w') as err:
       self._experiment_processes[experiment.unique_id] = subprocess.Popen(
-        cmd, env=env,
-        stdout=out, stderr=err, shell=False, cwd='/home/{}'.format(
-          experiment.user_name))
+        cmd, stdout=out, stderr=err, shell=False)
 
     self._active_experiments[experiment.unique_id] = (
       experiment, device_indices)
@@ -178,14 +191,16 @@ class WorkerInterface:
     return device_indices
 
   def _get_env(self, device_indices, tf_config_env):
-    env = os.environ.copy()
-    env['TF_CONFIG'] = (None if tf_config_env is None
-                        else json.dumps(tf_config_env))
-    env['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
+    env = ''
+
+    env += '-e TF_CONFIG="{}" '.format((None if tf_config_env is None
+                                     else json.dumps(tf_config_env)))
+    env += '-e CUDA_DEVICE_ORDER=PCI_BUS_ID '
     device_list = ''
     for device in device_indices:
       device_list += '{},'.format(device)
     device_list = device_list[:-1]
-    env['CUDA_VISIBLE_DEVICES'] = device_list
+
+    env += '-e CUDA_VISIBLE_DEVICES={} '.format(device_list)
 
     return env

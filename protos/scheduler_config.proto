@@ -17,4 +17,7 @@ message SchedulerConfig {
   optional float ups = 5;
   // In hours; 0 means perform experiment reorganization each update step.
   optional float reorganize_experiments_interval = 6;
+
+  // Path to the resource folder used by experiments
+  optional string resource_folder = 7;
 }

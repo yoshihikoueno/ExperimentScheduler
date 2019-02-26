@@ -11,7 +11,7 @@ from task import TaskType
 
 
 class Scheduler:
-  def __init__(self, workers, user_name_list, logdir, experiment_time_limit,
+  def __init__(self, workers, logdir, experiment_time_limit,
                reorganize_experiments_interval):
     assert(experiment_time_limit >= 0)
     # List of experiments handled as a queue. Contains Experiment objects.
@@ -26,7 +26,6 @@ class Scheduler:
     # Maps experiment_id to experiment
     self.finished_experiments = dict()
 
-    self.user_name_list = user_name_list
     # Dict mapping worker host to WorkerInterface
     self.workers = workers
 
@@ -126,9 +125,10 @@ class Scheduler:
         # Check if in waiting queue
         for i, experiment in enumerate(self.waiting_experiments):
           if experiment.unique_id == experiment_id:
-            logging.info("Stop request from host '{}' for experiment '{}' from user '{}'".format(
-              task.kvargs['host'], experiment.name,
-              experiment.user_name))
+            logging.info("Stop request from host '{}' for experiment '{}' "
+                         "from user '{}'".format(task.kvargs['host'],
+                                                 experiment.name,
+                                                 experiment.user_name))
             del self.waiting_experiments[i]
             stop_experiment = True
             break
@@ -139,9 +139,10 @@ class Scheduler:
          # Check if in pending queue
         for i, experiment in enumerate(self.pending_experiments):
           if experiment.unique_id == experiment_id:
-            logging.info("Stop request from host '{}' for experiment '{}' from user '{}'".format(
-              task.kvargs['host'], experiment.name,
-              experiment.user_name))
+            logging.info("Stop request from host '{}' for experiment '{}' "
+                         "from user '{}'".format(task.kvargs['host'],
+                                                 experiment.name,
+                                                 experiment.user_name))
             del self.pending_experiments[i]
             stop_experiment = True
             break
@@ -154,9 +155,10 @@ class Scheduler:
           stop_experiment = self.active_experiments[experiment_id]
 
         if stop_experiment is not None:
-          logging.info("Stop request from host '{}' for experiment '{}' from user '{}'".format(
-            task.kvargs['host'], stop_experiment.name,
-            stop_experiment.user_name))
+          logging.info("Stop request from host '{}' for experiment '{}' "
+                       " from user '{}'".format(task.kvargs['host'],
+                                                stop_experiment.name,
+                                                stop_experiment.user_name))
           self._stop_experiment(experiment_id, 'Killed: Web request')
         else:
           logging.debug('ID not there')
