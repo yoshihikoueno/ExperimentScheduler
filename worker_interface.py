@@ -137,8 +137,6 @@ class WorkerInterface:
            '--rm', '--runtime=nvidia', output_folder_arg, input_res_arg,
            env_args, '{}'.format(experiment.user_name)]
 
-    print(cmd)
-
     # Create log files for this experiment
     with open(os.path.join(self._logdir, '{}_stdout'.format(
         experiment.unique_id)), 'w') as out, open(os.path.join(
