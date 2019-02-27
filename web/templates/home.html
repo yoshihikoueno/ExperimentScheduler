@@ -32,6 +32,13 @@
   It is currently set at {{max_time}} hours.
   {% endif %}
 
+  <br><br>
+  The scheduler makes use of <a href="https://www.docker.com/">Docker</a> containers. For this to work, you need to supply
+  a docker file. Please refer to the <a href="https://docs.docker.com/get-started/">official get-started</a> from docker for help.
+  One thing to keep in mind however is that you cannot take any local build context into your container. Therefore you should supply your code
+  via git or something similar within the <a href="https://docs.docker.com/engine/reference/builder/">Dockerfile</a>.
+  An example docker file can be found <a href="home/docker_example">here</a>.
+
 
   <h2>Usage Notes</h2>
   <ul>
@@ -84,8 +91,8 @@
       <div class="form-check">
         <input type="checkbox" id="multiworker" name="multiworker" value="multiworker">
         <label for="multiworker" class="form-check-label">Can use multiple workers</label>
-        <small class="form-text text-muted">Whether your program is able to support multi-worker execution.
-         Currently only distributed tensorflow is supported.</small>
+        <small class="form-text text-muted">Whether your program is able to support multi-worker execution. I.e., are you able to distribute your program on multiple programs?
+         Currently only users of tensorflow estimator can use this.</small>
       </div>
     </div>
 

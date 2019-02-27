@@ -124,11 +124,14 @@ class WebInterface():
         max_time=scheduler_ref.experiment_time_limit,
         user_name=current_user.given_name)
 
-    @self.app.route('/home/post', methods=['GET', 'POST'])
-    def post():
-      if not current_user.is_authenticated:
-        return redirect(url_for('login'))
+    @self.app.route('/home/docker_example')
+    @login_required
+    def docker_example():
+      return render_template('docker_example.html', css_file=self.css_file)
 
+    @self.app.route('/home/post', methods=['GET', 'POST'])
+    @login_required
+    def post():
       if request.method == 'GET':
         return redirect(url_for('home'))
 
