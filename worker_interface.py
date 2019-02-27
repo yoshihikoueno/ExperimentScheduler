@@ -132,8 +132,8 @@ class WorkerInterface:
 
     cmd = ['ssh', '-t', '{}'.format(self.host),
            'echo', '"{}"'.format(experiment.docker_file), '|',
-           'docker', 'build', '-t', '{}'.format(experiment.user_name), '-',
-           '&&', 'docker', 'run',
+           'docker', 'build', '--no-cache', '-t',
+           '{}'.format(experiment.user_name), '-', '&&', 'docker', 'run',
            '--rm', '--runtime=nvidia', output_folder_arg, input_res_arg,
            env_args, '{}'.format(experiment.user_name)]
 
