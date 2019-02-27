@@ -119,19 +119,23 @@ class WorkerInterface:
     # Assign devices
     device_indices = self._assign_free_device_indices(num_devices)
 
-    env_args = self._get_env(device_indices, tf_config_env)
+    env = self._get_env(device_indices, tf_config_env)
+
+    env_args = []
+    for k, v in env.items():
+      env_args += ['-e', "{}='{}'".format(k, v)]
 
     user_resource_folder = os.path.join(self.resource_folder,
                                         experiment.user_name)
-    resource_folder_arg = '--mount type=bind,source={},target={}'.format(
-      user_resource_folder, self.docker_resource_folder)
+    resource_folder_arg = ['--mount', 'type=bind,source={},target={}'.format(
+      user_resource_folder, self.docker_resource_folder)]
 
     cmd = ['ssh', '-t', '{}'.format(self.host),
            'echo', '"{}"'.format(experiment.docker_file), '|',
            'docker', 'build', '--no-cache', '-t',
            '{}'.format(experiment.user_name), '-', '&&', 'docker', 'run',
-           '--rm', '--runtime=nvidia', resource_folder_arg,
-           env_args, '{}'.format(experiment.user_name)]
+           '--rm', '--runtime=nvidia'] + resource_folder_arg + env_args + [
+             '{}'.format(experiment.user_name)]
 
     # Create log files for this experiment
     with open(os.path.join(self._logdir, '{}_stdout'.format(
@@ -185,16 +189,15 @@ class WorkerInterface:
     return device_indices
 
   def _get_env(self, device_indices, tf_config_env):
-    env = ''
+    env = os.environ.copy()
+    if tf_config_env:
+      env['TF_CONFIG'] = json.dumps(tf_config_env)
 
-    env += '-e TF_CONFIG="{}" '.format((None if tf_config_env is None
-                                     else json.dumps(tf_config_env)))
-    env += '-e CUDA_DEVICE_ORDER=PCI_BUS_ID '
+    env['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
     device_list = ''
     for device in device_indices:
       device_list += '{},'.format(device)
     device_list = device_list[:-1]
-
-    env += '-e CUDA_VISIBLE_DEVICES={} '.format(device_list)
+    env['CUDA_VISIBLE_DEVICES'] = device_list
 
     return env

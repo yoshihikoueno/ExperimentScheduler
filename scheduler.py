@@ -384,7 +384,9 @@ class Scheduler:
       slave_hosts = [worker_host + ':{}'.format(
         self.workers[worker_host].get_free_port())
                      for worker_host in worker_hosts[1:]]
-      cluster_config = {'chief': [chief_host], 'worker': slave_hosts}
+      cluster_config = {'chief': [chief_host]}
+      if len(slave_hosts) > 0:
+        cluster_config['worker'] = slave_hosts
 
       # Start slave servers
       for i, worker_host in enumerate(worker_hosts[1:]):
