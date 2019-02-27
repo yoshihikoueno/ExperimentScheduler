@@ -4,7 +4,6 @@ import ldap
 from flask import request, render_template, flash, redirect, \
     url_for, g, Flask, Response
 from flask_login import current_user, login_required, LoginManager
-from flask_wtf import FlaskForm
 
 import experiment_builder as eb
 import task
@@ -12,7 +11,7 @@ from web.auth.models import User, LoginForm
 
 
 class WebInterface():
-  def __init__(self, scheduler_ref, resource_folder):
+  def __init__(self, scheduler_ref, resource_folder, docker_resource_folder):
     self.app = Flask(__name__)
     self.app.config['WTF_CSRF_SECRET_KEY'] = os.urandom(16)
     self.app.config['LDAP_PROVIDER_URL'] = 'ldap://ipa.kumalab.local:389'
@@ -27,15 +26,13 @@ class WebInterface():
     self.login_manager.login_message_category = 'info'
 
     self.conn = ldap.initialize(self.app.config['LDAP_PROVIDER_URL'])
-    #self.conn.set_option(ldap.OPT_X_TLS_DEMAND, True)
-    #self.conn.set_option(ldap.OPT_DEBUG_LEVEL, 0)
 
     self.css_file = 'base.css?v={}'.format(os.path.getmtime(
       os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static',
                    'css', 'base.css')))
 
-    self.experiment_builder = eb.ExperimentBuilder(
-      resource_folder=resource_folder)
+    self.experiment_builder = eb.ExperimentBuilder(resource_folder)
+    self.docker_resource_folder = docker_resource_folder
 
     @self.login_manager.user_loader
     def load_user(uid):
@@ -112,6 +109,7 @@ class WebInterface():
 
       return render_template(
         'home.html',
+        docker_resource_folder=self.docker_resource_folder,
         workstation_load_table_content=workstation_load_table_content,
         max_num_gpu=max_num_gpu,
         active_experiment_to_color=active_experiment_to_color,

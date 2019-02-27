@@ -5,7 +5,8 @@ import logging
 
 
 class WorkerInterface:
-  def __init__(self, host, tf_ports, num_devices, logdir):
+  def __init__(self, host, tf_ports, num_devices, logdir, resource_folder,
+               docker_resource_folder):
     self.host = host
     # Contains booleans whether the device at its index is free or not
     self._device_states = [True] * num_devices
@@ -23,8 +24,8 @@ class WorkerInterface:
 
     self._logdir = logdir
 
-    self.docker_input_res_path = '/kw_resources/input_res'
-    self.docker_output_folder_path = '/kw_resources/output_folder'
+    self.resource_folder = resource_folder
+    self.docker_resource_folder = docker_resource_folder
 
   @property
   def device_states(self):
@@ -120,21 +121,16 @@ class WorkerInterface:
 
     env_args = self._get_env(device_indices, tf_config_env)
 
-    # Create output folder if not existing
-    if not os.path.exists(experiment.output_folder):
-      os.mkdir(experiment.output_folder)
-    output_folder_arg = '--mount type=bind,source={},target={}'.format(
-      experiment.output_folder, self.docker_output_folder_path)
-
-    input_res_arg = '--mount type=bind,source={},target={}'.format(
-      experiment.input_res,
-      self.docker_input_res_path) if experiment.input_res != '' else ''
+    user_resource_folder = os.path.join(self.resource_folder,
+                                        experiment.user_name)
+    resource_folder_arg = '--mount type=bind,source={},target={}'.format(
+      user_resource_folder, self.docker_resource_folder)
 
     cmd = ['ssh', '-t', '{}'.format(self.host),
            'echo', '"{}"'.format(experiment.docker_file), '|',
            'docker', 'build', '--no-cache', '-t',
            '{}'.format(experiment.user_name), '-', '&&', 'docker', 'run',
-           '--rm', '--runtime=nvidia', output_folder_arg, input_res_arg,
+           '--rm', '--runtime=nvidia', resource_folder_arg,
            env_args, '{}'.format(experiment.user_name)]
 
     # Create log files for this experiment

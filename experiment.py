@@ -3,11 +3,8 @@ import datetime
 
 class Experiment():
   def __init__(self, docker_file, name, gpu_settings,
-               use_multiple_workers, can_restart, user_name, framework,
-               input_res, output_folder):
+               use_multiple_workers, can_restart, user_name, framework):
     self.docker_file = docker_file
-    self.input_res = input_res
-    self.output_folder = output_folder
     self.name = name
     self.gpu_settings = gpu_settings
     self.use_multiple_workers = use_multiple_workers

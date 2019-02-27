@@ -20,4 +20,6 @@ message SchedulerConfig {
 
   // Path to the resource folder used by experiments
   optional string resource_folder = 7;
+  // Path to the resource folder within the docker container
+  optional string docker_resource_folder = 8;
 }

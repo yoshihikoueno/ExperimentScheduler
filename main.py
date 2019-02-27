@@ -61,15 +61,17 @@ def run():
   for host in hosts:
     workers[host] = worker_interface.WorkerInterface(
       host=host, tf_ports=tf_ports, num_devices=num_devices_per_worker,
-      logdir=args.logdir)
+      logdir=args.logdir, resource_folder=config.resource_folder,
+      docker_resource_folder=config.docker_resource_folder)
 
   experiment_scheduler = scheduler.Scheduler(
     workers=workers,
     logdir=args.logdir, experiment_time_limit=experiment_time_limit,
     reorganize_experiments_interval=config.reorganize_experiments_interval)
 
-  web_interface = wi.WebInterface(scheduler_ref=experiment_scheduler,
-                                  resource_folder=config.resource_folder)
+  web_interface = wi.WebInterface(
+    scheduler_ref=experiment_scheduler, resource_folder=config.resource_folder,
+    docker_resource_folder=config.docker_resource_folder)
 
   public = args.public
   # Start web server thread
