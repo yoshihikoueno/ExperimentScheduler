@@ -23,7 +23,7 @@
   however they will be put into the waiting queue until your other experiment finishes.
 
   <br><br>
-  The scheduler will set environment variables <b><i>CUDA_VISIBLE_DEVICES</i></b> and <b><i>TF_CONFIG</i></b> to give
+  The scheduler will set environment variables <b><i>CUDA_VISIBLE_DEVICES</i></b> and optionally <b><i>TF_CONFIG</i></b> for multi worker setup to give
   the program information about the available environment.
 
   {% if max_time %}

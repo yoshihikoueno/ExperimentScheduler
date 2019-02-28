@@ -377,8 +377,9 @@ class Scheduler:
     worker_hosts = list(worker_to_devices.keys())
     num_devices_list = list(worker_to_devices.values())
 
-    if experiment.framework == 'tensorflow':
-      # Build cluster config
+    # Build and start with cluster config (only necessary if more
+    # than one worker)
+    if experiment.framework == 'tensorflow' and len(worker_hosts) > 1:
       chief_host = worker_hosts[0] + ':{}'.format(
         self.workers[worker_hosts[0]].get_free_port())
       slave_hosts = [worker_host + ':{}'.format(
@@ -403,9 +404,8 @@ class Scheduler:
       self.workers[worker_hosts[0]].start_experiment(
         experiment, num_devices=num_devices_list[0],
         tf_config_env=tf_config_env, is_restart=is_restart)
-
     else:
-      # Chainer
+      # Other
       self.workers[worker_hosts[0]].start_experiment(
         experiment, num_devices=num_devices_list[0], tf_config_env=None)
 
