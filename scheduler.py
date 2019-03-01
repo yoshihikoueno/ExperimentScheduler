@@ -407,7 +407,8 @@ class Scheduler:
     else:
       # Other
       self.workers[worker_hosts[0]].start_experiment(
-        experiment, num_devices=num_devices_list[0], tf_config_env=None)
+        experiment, num_devices=num_devices_list[0], tf_config_env=None,
+        is_restart=is_restart)
 
     if is_restart is False:
       experiment.start_time = datetime.datetime.now()
