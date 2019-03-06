@@ -132,8 +132,9 @@ class WorkerInterface:
 
     # We need to mount user and group folder, otherwise the docker environment
     # will create stuff as root in the result folders
+    # 1003: group id of gescheduler
     user_arg = ['-v', '/etc/passwd:/etc/passwd:ro', '-v',
-                '/etc/group:/etc/group:ro', '-u', '$(id -u):gscheduler']
+                '/etc/group:/etc/group:ro', '-u', '$(id -u):1003']
 
     cmd = (['ssh', '-t', '{}'.format(self.host),
             'echo', '"{}"'.format(experiment.docker_file), '|',
