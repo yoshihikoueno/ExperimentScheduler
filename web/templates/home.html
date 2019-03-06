@@ -211,7 +211,7 @@
     <th>Actions</th>
   </tr>
   <form method="post" name="finishedexperimentform" action="/home/post">
-    {% for e in finished_experiments.values() %}
+    {% for e in finished_experiments.values()|sort(attribute='finish_time') %}
     <tr>
       <td>{{e.start_time}}</td>
       <td>{{e.finish_time}}</td>
