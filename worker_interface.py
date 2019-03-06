@@ -130,12 +130,17 @@ class WorkerInterface:
     resource_folder_arg = ['--mount', 'type=bind,source={},target={}'.format(
       user_resource_folder, self.docker_resource_folder)]
 
-    cmd = ['ssh', '-t', '{}'.format(self.host),
-           'echo', '"{}"'.format(experiment.docker_file), '|',
-           'docker', 'build', '--no-cache', '-t',
-           '{}'.format(experiment.user_name), '-', '&&', 'docker', 'run',
-           '--rm', '--runtime=nvidia'] + resource_folder_arg + env_args + [
-             '{}'.format(experiment.user_name)]
+    # We need to mount user and group folder, otherwise the docker environment
+    # will create stuff as root in the result folders
+    user_arg = ['-v', '/etc/passwd:/etc/passwd:ro', '-v',
+                '/etc/group:/etc/group:ro', '-u', '$(id -u):$(id -g)']
+
+    cmd = (['ssh', '-t', '{}'.format(self.host),
+            'echo', '"{}"'.format(experiment.docker_file), '|',
+            'docker', 'build', '--no-cache', '-t',
+            '{}'.format(experiment.user_name), '-', '&&', 'docker', 'run',
+            '--rm', '--runtime=nvidia'] + resource_folder_arg + user_arg
+           + env_args + ['{}'.format(experiment.user_name)])
 
     # Create log files for this experiment
     with open(os.path.join(self._logdir, '{}_stdout'.format(
