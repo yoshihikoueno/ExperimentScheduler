@@ -39,7 +39,7 @@ class Scheduler:
     self._logdir = logdir
     # In hours, 0 means no limit
     self._experiment_time_limit = experiment_time_limit
-    # In hours, 0 means reorganization at every update step
+    # In minutes, 0 means reorganization at every update step
     self._reorganize_experiments_interval = reorganize_experiments_interval
     self._t_last_reorganize = datetime.datetime.now()
 
@@ -72,7 +72,7 @@ class Scheduler:
 
     self._handle_waiting_experiments()
 
-    if ((datetime.datetime.now() - self._t_last_reorganize).seconds / 3600.0
+    if ((datetime.datetime.now() - self._t_last_reorganize).seconds / 60.0
         > self._reorganize_experiments_interval):
       self._reorganize_experiments()
       self._t_last_reorganize = datetime.datetime.now()
