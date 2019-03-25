@@ -32,7 +32,7 @@ class ExperimentBuilder():
       return False, 'User name missing.'
     if not os.path.exists(os.path.join(self.resource_folder,
                                        experiment_dict['username'])):
-      return False, 'User directory in workstation resource folder not found.'
+      return False, 'User directory {} not found in workstation resource folder.'.format(os.path.join(self.resource_folder, experiment_dict['username']))
 
     if experiment_dict['framework'] not in ['tensorflow', 'other']:
       return False, 'Invalid development framework.'

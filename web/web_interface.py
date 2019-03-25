@@ -169,9 +169,6 @@ class WebInterface():
       else:
         request_dict = dict(request.form)
         request_dict['username'] = current_user.uid
-        if 'dockerfile' in request.files:
-          request_dict['dockerfile'] = request.files[
-            'dockerfile'].stream.read().decode('UTF-8')
         # Create experiment request
         success, msg = self.experiment_builder.is_valid_experiment(
           request_dict)
