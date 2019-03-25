@@ -493,7 +493,7 @@ def _can_fit(experiment, free_worker_devices):
         suitable_worker = worker
         num_min_devices = num_devices
 
-    return True, {suitable_worker: [free_worker_devices[suitable_worker][0]]}
+    return True, {suitable_worker: 1}
   else:
     # Select worker with most devices available
     suitable_worker = None
