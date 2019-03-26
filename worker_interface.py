@@ -159,7 +159,7 @@ class WorkerInterface:
   def stop_experiment(self, experiment_id, reason):
     assert(experiment_id in self._experiment_processes)
     assert(experiment_id in self._active_experiments)
-    experiment = self._active_experiments[experiment_id]
+    experiment = self._active_experiments[experiment_id][0]
     p = self._experiment_processes[experiment_id]
     return_code = p.poll()
 
