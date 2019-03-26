@@ -101,8 +101,8 @@ class WorkerInterface:
 
     p, port, device_indices = self._tf_server_processes[experiment_id]
 
-    p.kill()
-    p.wait()
+    p.terminate()
+    pwait()
 
     assert(port in self._used_tf_ports)
     self._used_tf_ports.remove(port)
@@ -163,7 +163,7 @@ class WorkerInterface:
     return_code = p.poll()
 
     if return_code is None:
-      p.kill()
+      p.terminate()
       p.wait()
       return_code = 'Killed: {}'.format(reason)
     else:
