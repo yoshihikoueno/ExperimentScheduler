@@ -137,12 +137,11 @@ class WorkerInterface:
     user_arg = ['-v', '/etc/passwd:/etc/passwd:ro', '-v',
                 '/etc/group:/etc/group:ro', '-u', '$(id -u):1003']
 
-    # We need to listen for SIGINT, since ssh sends this stop signal
     cmd = (['ssh', '-t', '{}'.format(self.host),
             'echo', '"{}"'.format(experiment.docker_file), '|',
             'docker', 'build', '--no-cache', '-t',
-            '{}'.format(experiment.user_name), '-', '&&', 'docker', 'run',
-            '--rm', '--stop-signal=SIGINT', '--runtime=nvidia']
+            experiment.user_name, '-', '&&', 'docker', 'run',
+            '--rm', '--name', experiment.user_name, '--runtime=nvidia']
            + resource_folder_arg + user_arg
            + env_args + ['{}'.format(experiment.user_name)])
 
@@ -160,15 +159,22 @@ class WorkerInterface:
   def stop_experiment(self, experiment_id, reason):
     assert(experiment_id in self._experiment_processes)
     assert(experiment_id in self._active_experiments)
-
+    experiment = self._active_experiments[experiment_id]
     p = self._experiment_processes[experiment_id]
     return_code = p.poll()
 
     if return_code is None:
-      p.terminate()
+      # Stop container and remove image
+      subprocess.call('ssh', '{}'.format(self.host), 'docker', 'kill',
+                      experiment.user_name, '&&', 'docker', 'image', 'rm', experiment.user_name)
+      # Next kill the ssh process
+      p.kill()
       p.wait()
       return_code = 'Killed: {}'.format(reason)
     else:
+      # Remove image
+      subprocess.call('ssh', '{}'.format(self.host), 'docker', 'image', 'rm',
+                      experiment.user_name)
       if return_code == 0:
         return_code = 'Success'
       else:
