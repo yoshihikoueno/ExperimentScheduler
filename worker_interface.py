@@ -165,16 +165,17 @@ class WorkerInterface:
 
     if return_code is None:
       # Stop container and remove image
-      subprocess.call('ssh', '{}'.format(self.host), 'docker', 'kill',
-                      experiment.user_name, '&&', 'docker', 'image', 'rm', experiment.user_name)
+      subprocess.call(['ssh', '{}'.format(self.host), 'docker', 'kill',
+                       experiment.user_name, '&&', 'docker', 'image', 'rm',
+                       experiment.user_name])
       # Next kill the ssh process
       p.kill()
       p.wait()
       return_code = 'Killed: {}'.format(reason)
     else:
       # Remove image
-      subprocess.call('ssh', '{}'.format(self.host), 'docker', 'image', 'rm',
-                      experiment.user_name)
+      subprocess.call(['ssh', '{}'.format(self.host), 'docker', 'image', 'rm',
+                       experiment.user_name])
       if return_code == 0:
         return_code = 'Success'
       else:
