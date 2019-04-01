@@ -68,6 +68,14 @@ class WebInterface():
             flash("Invalid username or password. Please try again.", 'danger')
             return render_template('login.html', form=form,
                                    css_file=self.css_file)
+          except ldap.SERVER_DOWN:
+            flash("LDAP authentication server seems to be down. Please contact a system administrator.")
+            return render_template('login.html', form=form,
+                                   css_file=self.css_file)
+          except Exception as e:
+            flash("Unhandled LDAP exception: {}".format(e))
+            return render_template('login.html', form=form,
+                                   css_file=self.css_file)
 
           flash("You have successfully logged in!", 'success')
           return redirect(url_for('home'))
