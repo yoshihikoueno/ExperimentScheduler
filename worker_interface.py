@@ -88,7 +88,7 @@ class WorkerInterface:
 
     env = self._get_env(device_indices, tf_config_env)
 
-    cmd = ['ssh', '-t', self.host, 'python3',
+    cmd = ['ssh', self.host, 'python3',
            'ExperimentScheduler/start_tf_server.py']
 
     p = subprocess.Popen(cmd, env=env, shell=False, stdout=subprocess.PIPE,
@@ -137,7 +137,7 @@ class WorkerInterface:
     user_arg = ['-v', '/etc/passwd:/etc/passwd:ro', '-v',
                 '/etc/group:/etc/group:ro', '-u', '$(id -u):1003']
 
-    cmd = (['ssh', '-t', '{}'.format(self.host),
+    cmd = (['ssh', '{}'.format(self.host),
             'echo', '"{}"'.format(experiment.docker_file), '|',
             'docker', 'build', '--no-cache', '-t',
             experiment.user_name, '-', '&&', 'docker', 'run',
