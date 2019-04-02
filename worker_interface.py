@@ -2,6 +2,7 @@ import os
 import json
 import subprocess
 import logging
+import sys
 
 
 class WorkerInterface:
@@ -24,6 +25,11 @@ class WorkerInterface:
 
     self._logdir = logdir
 
+    # Check if our program stdout and sterr are attached to a tty.
+    # If true, we need to tell ssh to allocate a pseudo tty, otherwise
+    # the ssh program cannot be killed correctly.
+    self.is_tty = sys.stdout.isatty() and sys.stderr.isatty()
+
     self.resource_folder = resource_folder
     self.docker_resource_folder = docker_resource_folder
 
@@ -43,10 +49,12 @@ class WorkerInterface:
     for p in self._tf_server_processes.values():
       logging.info("Terminating TF Server Process.")
       p.terminate()
+      p.wait()
     for p in self._experiment_processes.values():
       logging.info("Terminating Experiment Process.")
       p.terminate()
-  
+      p.wait()
+
   # Returns a list of tuples of (experiment_id, return_code) that are finished
   def poll_experiments(self):
     result = []
@@ -88,8 +96,9 @@ class WorkerInterface:
 
     env = self._get_env(device_indices, tf_config_env)
 
-    cmd = ['ssh', self.host, 'python3',
-           'ExperimentScheduler/start_tf_server.py']
+    tty = ['-t'] if self.is_tty else []
+    cmd = ['ssh'] + tty + [self.host, 'python3',
+                           'ExperimentScheduler/start_tf_server.py']
 
     p = subprocess.Popen(cmd, env=env, shell=False, stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE)
@@ -102,7 +111,7 @@ class WorkerInterface:
     p, port, device_indices = self._tf_server_processes[experiment_id]
 
     p.terminate()
-    pwait()
+    p.wait()
 
     assert(port in self._used_tf_ports)
     self._used_tf_ports.remove(port)
@@ -136,12 +145,13 @@ class WorkerInterface:
     # 1003: group id of gescheduler
     user_arg = ['-v', '/etc/passwd:/etc/passwd:ro', '-v',
                 '/etc/group:/etc/group:ro', '-u', '$(id -u):1003']
-
-    cmd = (['ssh', '{}'.format(self.host),
-            'echo', '"{}"'.format(experiment.docker_file), '|',
-            'docker', 'build', '--no-cache', '-t',
-            experiment.user_name, '-', '&&', 'docker', 'run',
-            '--rm', '--name', experiment.user_name, '--runtime=nvidia']
+    tty = ['-t'] if self.is_tty else []
+    cmd = (['ssh'] + tty + [
+      self.host,
+      'echo', '"{}"'.format(experiment.docker_file), '|',
+      'docker', 'build', '--no-cache', '-t',
+      experiment.user_name, '-', '&&', 'docker', 'run',
+      '--rm', '--name', experiment.user_name, '--runtime=nvidia']
            + resource_folder_arg + user_arg
            + env_args + ['{}'.format(experiment.user_name)])
 
