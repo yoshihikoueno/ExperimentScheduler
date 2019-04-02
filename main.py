@@ -9,6 +9,7 @@ from google.protobuf import text_format
 import scheduler
 import worker_interface
 from utils import logger
+from utils import util_ops
 from web import web_interface as wi
 from protos import scheduler_config_pb2
 
@@ -47,7 +48,10 @@ def run():
 
   config = load_config(args.config)
 
-  num_devices_per_worker = config.num_devices_per_worker
+  num_devices_per_worker = util_ops.get_num_devices()
+  if num_devices_per_worker < 1:
+    raise ValueError("There must be atleast one GPU.")
+
   # In hours, 0 for no limit
   experiment_time_limit = config.experiment_time_limit
   initial_tf_port = config.initial_tf_port

@@ -8,7 +8,6 @@ message SchedulerConfig {
   // TF servers need to operate on a port. Per device, a port will be used,
   // Starting from initial_tf_port until initial_tf_port + num_devices_per_worker
   optional uint32 initial_tf_port = 2;
-  optional uint32 num_devices_per_worker = 3;
 
   // In hours; 0 for no limit
   optional float experiment_time_limit = 4;
