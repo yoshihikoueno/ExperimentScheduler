@@ -15,10 +15,11 @@ class User():
 
   @staticmethod
   def get_user(conn, uid):
+  if User.user is not None:
    if uid == User.user.uid:
      return User.user
-   else:
-     return None
+
+  return None
 
   @staticmethod
   def try_login(conn, username, password):
