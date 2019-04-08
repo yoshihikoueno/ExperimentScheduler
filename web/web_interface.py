@@ -7,7 +7,7 @@ from flask_login import current_user, login_required, LoginManager
 
 import experiment_builder as eb
 import task
-from web.auth.models import User, LoginForm
+from web.auth.models import UserManager, LoginForm
 
 
 class WebInterface():
@@ -25,7 +25,8 @@ class WebInterface():
     self.login_manager.login_view = 'login'
     self.login_manager.login_message_category = 'info'
 
-    self.conn = ldap.initialize(self.app.config['LDAP_PROVIDER_URL'])
+    self.conn = ldap.ldapobject.ReconnectLDAPObject(
+      self.app.config['LDAP_PROVIDER_URL'])
 
     self.css_file = 'base.css?v={}'.format(os.path.getmtime(
       os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static',
@@ -36,7 +37,7 @@ class WebInterface():
 
     @self.login_manager.user_loader
     def load_user(uid):
-      return User.get_user(self.conn, uid)
+      return UserManager.get_user(self.conn, uid)
 
     @self.app.before_request
     def get_current_user():
@@ -63,7 +64,7 @@ class WebInterface():
           password = request.form.get('password')
 
           try:
-            User.try_login(self.conn, username, password)
+            UserManager.try_login(self.conn, username, password)
           except ldap.INVALID_CREDENTIALS:
             flash("Invalid username or password. Please try again.", 'danger')
             return render_template('login.html', form=form,
@@ -198,7 +199,7 @@ class WebInterface():
     @self.app.route('/logout', methods=['GET', 'POST'])
     @login_required
     def logout():
-      User.logout()
+      UserManager.logout(current_user)
 
       return redirect(url_for('login'))
 

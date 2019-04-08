@@ -7,19 +7,32 @@ from wtforms.validators import InputRequired
 
 
 class User():
-  user = None
-
   def __init__(self, uid, given_name):
     self.uid = uid
     self.given_name = given_name
 
+  def get_id(self):
+    return self.uid
+
+  def is_authenticated(self):
+    return True
+
+  def is_active(self):
+    return True
+
+  def is_anonymous(self):
+    return False
+
+
+class UserManager():
+  users = dict()
+
   @staticmethod
   def get_user(conn, uid):
-    if User.user is not None:
-      if uid == User.user.uid:
-        return User.user
-
-    return None
+    if uid in UserManager.users:
+      return UserManager.users[uid]
+    else:
+      return None
 
   @staticmethod
   def try_login(conn, username, password):
@@ -33,30 +46,19 @@ class User():
 
     user = User(uid=ldap_user_object['uid'][0].decode('UTF-8'),
                 given_name=ldap_user_object['givenName'][0].decode('UTF-8'))
-
-    User.user = user
+    UserManager.users[user.uid] = user
 
     login_user(user)
 
     return user
 
   @staticmethod
-  def logout():
-    if User.user is not None:
+  def logout(user):
+    if user is not None:
       logout_user()
-      User.user = None
 
-  def is_authenticated(self):
-    return True
-
-  def is_active(self):
-    return True
-
-  def is_anonymous(self):
-    return False
-
-  def get_id(self):
-    return self.uid
+    if user in UserManager.users:
+      del UserManager.users[user]
 
 
 class LoginForm(FlaskForm):
