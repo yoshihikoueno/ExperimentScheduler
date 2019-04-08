@@ -16,8 +16,8 @@ class User():
   @staticmethod
   def get_user(conn, uid):
   if User.user is not None:
-   if uid == User.user.uid:
-     return User.user
+    if uid == User.user.uid:
+      return User.user
 
   return None
 
