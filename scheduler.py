@@ -152,17 +152,12 @@ class Scheduler:
 
         # Check if active
         if experiment_id in self._active_experiment_clusters:
-          stop_experiment = self.active_experiments[experiment_id]
-
-        if stop_experiment is not None:
+          experiment = self.active_experiments[experiment_id]
           logging.info("Stop request from host '{}' for experiment '{}' "
                        " from user '{}'".format(task.kvargs['host'],
-                                                stop_experiment.name,
-                                                stop_experiment.user_name))
+                                                experiment.name,
+                                                experiment.user_name))
           self._stop_experiment(experiment_id, 'Killed: Web request')
-        else:
-          logging.debug('ID not there')
-
       else:
         logging.error("Task {} not implemented!".format(task.task_type))
 
