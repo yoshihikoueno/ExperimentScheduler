@@ -2,7 +2,6 @@ import queue
 import logging
 import datetime
 import os
-import itertools
 import atexit
 
 import numpy as np

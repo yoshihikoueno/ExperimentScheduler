@@ -174,22 +174,35 @@ class WorkerInterface:
     return_code = p.poll()
 
     if return_code is None:
-      # Stop container and remove image
-      subprocess.call(['ssh', '{}'.format(self.host), 'docker', 'kill',
-                       experiment.user_name, '&&', 'docker', 'image', 'rm',
-                       experiment.user_name])
-      # Next kill the ssh process
+      # Process did not stop yet
+
+      # First kill the ssh process
       p.kill()
       p.wait()
+
+      # Stop container and remove image
+      subprocess.call(['ssh', '{}'.format(self.host), 'docker', 'kill',
+                       experiment.user_name],
+                      stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      subprocess.call(['docker', 'rmi',
+                       '-f', experiment.user_name], stdout=subprocess.PIPE,
+                      stderr=subprocess.PIPE)
       return_code = 'Killed: {}'.format(reason)
     else:
       # Remove image
-      subprocess.call(['ssh', '{}'.format(self.host), 'docker', 'image', 'rm',
-                       experiment.user_name])
+      subprocess.call(['ssh', '{}'.format(self.host), 'docker', 'rmi',
+                       '-f', experiment.user_name],
+                      stdout=subprocess.PIPE, stderr=subprocess.PIPE)
       if return_code == 0:
         return_code = 'Success'
       else:
         return_code = 'Error: {}'.format(return_code)
+
+    # If the image was not completely built before it was stopped,
+    # it may still be dangling, so remove all dangling images
+    subprocess.call(['ssh', self.host, 'docker', 'rmi', '-f',
+                     '$(docker images -f "dangling=true" -q)'],
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     del self._experiment_processes[experiment_id]
 
