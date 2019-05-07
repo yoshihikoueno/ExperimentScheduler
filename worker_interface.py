@@ -143,8 +143,11 @@ class WorkerInterface:
     # We need to mount user and group folder, otherwise the docker environment
     # will create stuff as root in the result folders
     # 1003: group id of gescheduler
+    # We also need to add the localtime file, so that the timezone of the host
+    # and the container will be the same
     user_arg = ['-v', '/etc/passwd:/etc/passwd:ro', '-v',
-                '/etc/group:/etc/group:ro', '-u', '$(id -u):1003']
+                '/etc/group:/etc/group:ro', '-u', '$(id -u):1003', '-v',
+                '/etc/localtime:/etc/localtime:ro']
     tty = ['-t'] if self.is_tty else []
     cmd = (['ssh'] + tty + [
       self.host,
