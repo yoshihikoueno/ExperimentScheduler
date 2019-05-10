@@ -448,8 +448,8 @@ class Scheduler:
     for experiment_id, experiment in self.active_experiments.items():
       # Check if timeout
       if (self._experiment_time_limit > 0 and (
-          datetime.datetime.now() - experiment.start_time).seconds / 3600.0
-          > self._experiment_time_limit):
+          datetime.datetime.now() - experiment.start_time).total_seconds()
+          / 3600.0 > self._experiment_time_limit):
         result.append((experiment_id, 'Timeout'))
 
     return result
