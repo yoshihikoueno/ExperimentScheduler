@@ -66,7 +66,7 @@ class WorkerInterface:
         if return_code == 0:
           result.append((experiment_id, 'Success.'))
         else:
-          result.append((experiment_id, 'Error: {}'.format(return_code)))
+          result.append((experiment_id, f'Error: {return_code}'))
 
     return result
 
@@ -130,12 +130,10 @@ class WorkerInterface:
 
     env_args = []
     for k, v in env.items():
-      env_args += ['-e', "{}='{}'".format(k, v)]
+      env_args += ['-e', f"{k}='{v}'"]
 
-    user_resource_folder = os.path.join(self.resource_folder,
-                                        experiment.user_name)
-    resource_folder_arg = ['--mount', 'type=bind,source={},target={}'.format(
-      user_resource_folder, self.docker_resource_folder)]
+    user_resource_folder = os.path.join(self.resource_folder, experiment.user_name)
+    resource_folder_arg = ['--mount', f'type=bind,source={user_resource_folder},target={self.docker_resource_folder}']
 
     # We need to mount user and group folder, otherwise the docker environment
     # will create stuff as root in the result folders
@@ -149,16 +147,16 @@ class WorkerInterface:
 
     cmd = (['ssh'] + tty + [
       self.host,
-      'echo', '"{}"'.format(experiment.docker_file), '|',
+      'echo', f'"{experiment.docker_file}"', '|',
       'docker', 'build', '--no-cache', '-t',
       experiment.user_name, '-', '&&', 'docker', 'run',
       '--rm', '--name', experiment.user_name, '--gpus', 'all']
            + resource_folder_arg + user_arg
-           + env_args + ['{}'.format(experiment.user_name)])
+           + env_args + [f'{experiment.user_name}'])
 
     # Create log files for this experiment
-    stdout_file = os.path.join(self._logdir, '{}_stdout'.format(experiment.unique_id))
-    stderr_file = os.path.join(self._logdir, '{}_stderr'.format(experiment.unique_id))
+    stdout_file = os.path.join(self._logdir, f'{experiment.unique_id}_stdout')
+    stderr_file = os.path.join(self._logdir, f'{experiment.unique_id}_stderr')
     with open(stdout_file, 'w') as out, open(stderr_file, 'w') as err:
         pid = subprocess.Popen(cmd, stdout=out, stderr=err, shell=False)
         self._experiment_processes[experiment.unique_id] = pid
@@ -181,22 +179,22 @@ class WorkerInterface:
 
       # Stop container and remove image
       subprocess.call(
-          ['ssh', '{}'.format(self.host), 'docker', 'kill', experiment.user_name],
+          ['ssh', f'{self.host}', 'docker', 'kill', experiment.user_name],
           stdout=subprocess.PIPE, stderr=subprocess.PIPE,
       )
       subprocess.call(
           ['docker', 'rmi', '-f', experiment.user_name],
           stdout=subprocess.PIPE, stderr=subprocess.PIPE,
       )
-      return_code = 'Killed: {}'.format(reason)
+      return_code = f'Killed: {reason}'
     else:
       # Remove image
       subprocess.call(
-          ['ssh', '{}'.format(self.host), 'docker', 'rmi', '-f', experiment.user_name],
+          ['ssh', f'{self.host}', 'docker', 'rmi', '-f', experiment.user_name],
           stdout=subprocess.PIPE, stderr=subprocess.PIPE,
       )
       if return_code == 0: return_code = 'Success'
-      else: return_code = 'Error: {}'.format(return_code)
+      else: return_code = f'Error: {return_code}'
 
     # If the image was not completely built before it was stopped,
     # it may still be dangling, so remove all dangling images
@@ -226,19 +224,11 @@ class WorkerInterface:
         if len(device_indices) == num_devices: break
 
     assert len(device_indices) == num_devices
-
     return device_indices
 
   def _get_env(self, device_indices, tf_config_env):
     env = os.environ.copy()
-    if tf_config_env:
-      env['TF_CONFIG'] = json.dumps(tf_config_env)
-
+    if tf_config_env: env['TF_CONFIG'] = json.dumps(tf_config_env)
     env['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
-    device_list = ''
-    for device in device_indices:
-      device_list += '{},'.format(device)
-    device_list = device_list[:-1]
-    env['CUDA_VISIBLE_DEVICES'] = device_list
-
+    env['CUDA_VISIBLE_DEVICES'] = ','.join(device_indices)
     return env
