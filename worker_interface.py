@@ -180,35 +180,37 @@ class WorkerInterface:
       p.wait()
 
       # Stop container and remove image
-      subprocess.call(['ssh', '{}'.format(self.host), 'docker', 'kill',
-                       experiment.user_name],
-                      stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-      subprocess.call(['docker', 'rmi',
-                       '-f', experiment.user_name], stdout=subprocess.PIPE,
-                      stderr=subprocess.PIPE)
+      subprocess.call(
+          ['ssh', '{}'.format(self.host), 'docker', 'kill', experiment.user_name],
+          stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+      )
+      subprocess.call(
+          ['docker', 'rmi', '-f', experiment.user_name],
+          stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+      )
       return_code = 'Killed: {}'.format(reason)
     else:
       # Remove image
-      subprocess.call(['ssh', '{}'.format(self.host), 'docker', 'rmi',
-                       '-f', experiment.user_name],
-                      stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-      if return_code == 0:
-        return_code = 'Success'
-      else:
-        return_code = 'Error: {}'.format(return_code)
+      subprocess.call(
+          ['ssh', '{}'.format(self.host), 'docker', 'rmi', '-f', experiment.user_name],
+          stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+      )
+      if return_code == 0: return_code = 'Success'
+      else: return_code = 'Error: {}'.format(return_code)
 
     # If the image was not completely built before it was stopped,
     # it may still be dangling, so remove all dangling images
-    subprocess.call(['ssh', self.host, 'docker', 'rmi', '-f',
-                     '$(docker images -f "dangling=true" -q)'],
-                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    subprocess.call(
+        ['ssh', self.host, 'docker', 'rmi', '-f', '$(docker images -f "dangling=true" -q)'],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+    )
 
     del self._experiment_processes[experiment_id]
 
     experiment, device_indices = self._active_experiments[experiment_id]
 
     for device_index in device_indices:
-      assert(self.device_states[device_index] is False)
+      assert self.device_states[device_index] is False
       self.device_states[device_index] = True
 
     del self._active_experiments[experiment_id]
@@ -221,8 +223,7 @@ class WorkerInterface:
       if device_state is True:
         device_indices.append(i)
         self._device_states[i] = False
-        if len(device_indices) == num_devices:
-          break
+        if len(device_indices) == num_devices: break
 
     assert len(device_indices) == num_devices
 
