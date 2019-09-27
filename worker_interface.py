@@ -1,4 +1,5 @@
 import os
+import tempfile
 import json
 import subprocess
 import logging
@@ -41,9 +42,8 @@ class WorkerInterface:
   def get_experiment_id(self, device_index):
     for experiment, device_indices in self._active_experiments.values():
       if device_index in device_indices:
-        return experiment.unique_id
-
-    assert(False)
+          return experiment.unique_id
+    raise RuntimeError
 
   def shutdown(self):
     for p in self._tf_server_processes.values():
@@ -76,18 +76,17 @@ class WorkerInterface:
       if port not in self._used_tf_ports:
         res = port
 
-    assert(port != 0)
-
+    assert port != 0
     return res
 
   def start_tf_server(self, experiment_id, num_devices, tf_config_env):
-    assert(experiment_id not in self._tf_server_processes)
+    assert experiment_id not in self._tf_server_processes
 
     # Extract port from config
     port = int(tf_config_env['cluster'][tf_config_env['task']['type']][
       tf_config_env['task']['index']].split(':')[1])
-    assert(port not in self._used_tf_ports)
-    assert(port in self._tf_ports)
+    assert port not in self._used_tf_ports
+    assert port in self._tf_ports
 
     self._used_tf_ports.append(port)
 
@@ -100,31 +99,29 @@ class WorkerInterface:
     cmd = ['ssh'] + tty + [self.host, 'python3',
                            'ExperimentScheduler/start_tf_server.py']
 
-    p = subprocess.Popen(cmd, env=env, shell=False, stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
+    p = subprocess.Popen(cmd, env=env, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     self._tf_server_processes[experiment_id] = (p, port, device_indices)
 
   def stop_tf_server(self, experiment_id):
-    assert(experiment_id in self._tf_server_processes)
+    assert experiment_id in self._tf_server_processes
 
     p, port, device_indices = self._tf_server_processes[experiment_id]
 
     p.terminate()
     p.wait()
 
-    assert(port in self._used_tf_ports)
+    assert port in self._used_tf_ports
     self._used_tf_ports.remove(port)
 
     for device_index in device_indices:
-      assert(self.device_states[device_index] is False)
+      assert self.device_states[device_index] is False
       self.device_states[device_index] = True
 
     del self._tf_server_processes[experiment_id]
 
-  def start_experiment(self, experiment, num_devices, tf_config_env,
-                       is_restart):
-    assert(experiment.unique_id not in self._active_experiments)
+  def start_experiment(self, experiment, num_devices, tf_config_env, is_restart):
+    assert experiment.unique_id not in self._active_experiments
 
     # Assign devices
     device_indices = self._assign_free_device_indices(num_devices)
@@ -149,6 +146,7 @@ class WorkerInterface:
                 '/etc/group:/etc/group:ro', '-u', '$(id -u):1003', '-v',
                 '/etc/localtime:/etc/localtime:ro']
     tty = ['-t'] if self.is_tty else []
+
     cmd = (['ssh'] + tty + [
       self.host,
       'echo', '"{}"'.format(experiment.docker_file), '|',
@@ -159,19 +157,17 @@ class WorkerInterface:
            + env_args + ['{}'.format(experiment.user_name)])
 
     # Create log files for this experiment
-    with open(os.path.join(self._logdir, '{}_stdout'.format(
-        experiment.unique_id)), 'w') as out, open(os.path.join(
-          self._logdir, '{}_stderr'.format(experiment.unique_id)),
-                                                   'w') as err:
-      self._experiment_processes[experiment.unique_id] = subprocess.Popen(
-        cmd, stdout=out, stderr=err, shell=False)
+    stdout_file = os.path.join(self._logdir, '{}_stdout'.format(experiment.unique_id))
+    stderr_file = os.path.join(self._logdir, '{}_stderr'.format(experiment.unique_id))
+    with open(stdout_file, 'w') as out, open(stderr_file, 'w') as err:
+        pid = subprocess.Popen(cmd, stdout=out, stderr=err, shell=False)
+        self._experiment_processes[experiment.unique_id] = pid
 
-    self._active_experiments[experiment.unique_id] = (
-      experiment, device_indices)
+    self._active_experiments[experiment.unique_id] = (experiment, device_indices)
 
   def stop_experiment(self, experiment_id, reason):
-    assert(experiment_id in self._experiment_processes)
-    assert(experiment_id in self._active_experiments)
+    assert experiment_id in self._experiment_processes
+    assert experiment_id in self._active_experiments
     experiment = self._active_experiments[experiment_id][0]
     p = self._experiment_processes[experiment_id]
     return_code = p.poll()
@@ -228,7 +224,7 @@ class WorkerInterface:
         if len(device_indices) == num_devices:
           break
 
-    assert(len(device_indices) == num_devices)
+    assert len(device_indices) == num_devices
 
     return device_indices
 
