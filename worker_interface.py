@@ -154,7 +154,7 @@ class WorkerInterface:
       'echo', '"{}"'.format(experiment.docker_file), '|',
       'docker', 'build', '--no-cache', '-t',
       experiment.user_name, '-', '&&', 'docker', 'run',
-      '--rm', '--name', experiment.user_name, '--runtime=nvidia']
+      '--rm', '--name', experiment.user_name, '--gpus', 'all']
            + resource_folder_arg + user_arg
            + env_args + ['{}'.format(experiment.user_name)])
 
