@@ -96,8 +96,7 @@ class WorkerInterface:
     env = self._get_env(device_indices, tf_config_env)
 
     tty = ['-t'] if self.is_tty else []
-    cmd = ['ssh'] + tty + [self.host, 'python3',
-                           'ExperimentScheduler/start_tf_server.py']
+    cmd = ['ssh'] + tty + [self.host, 'python3', 'ExperimentScheduler/start_tf_server.py']
 
     p = subprocess.Popen(cmd, env=env, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
