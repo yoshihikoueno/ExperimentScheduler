@@ -182,7 +182,7 @@ class WorkerInterface:
           stdout=subprocess.PIPE, stderr=subprocess.PIPE,
       )
       subprocess.call(
-          ['docker', 'rmi', '-f', experiment.user_name],
+          ['ssh', f'{self.host}', 'docker', 'rmi', '-f', experiment.user_name],
           stdout=subprocess.PIPE, stderr=subprocess.PIPE,
       )
       return_code = f'Killed: {reason}'
