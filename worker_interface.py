@@ -229,5 +229,5 @@ class WorkerInterface:
     env = os.environ.copy()
     if tf_config_env: env['TF_CONFIG'] = json.dumps(tf_config_env)
     env['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
-    env['CUDA_VISIBLE_DEVICES'] = ','.join(device_indices)
+    env['CUDA_VISIBLE_DEVICES'] = ','.join(map(str, device_indices))
     return env
