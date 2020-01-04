@@ -148,14 +148,16 @@ class WorkerInterface:
                     '/etc/localtime:/etc/localtime:ro']
         tty = ['-t'] if self.is_tty else []
 
-        cmd = (['ssh'] + tty + [
-            self.host,
-            'echo', f'"{experiment.docker_file}"', '|',
-            'docker', 'build', '--no-cache', '-t',
-            experiment.user_name, '-', '&&', 'docker', 'run',
-            '--rm', '--name', experiment.user_name, '--gpus', 'all']
-            + resource_folder_arg + user_arg
-            + env_args + [f'{experiment.user_name}'])
+        with tempfile.TemporaryFile() as f:
+            f.write(experiment.docker_file)
+            cmd = (['ssh'] + tty + [
+                self.host,
+                'echo', f'"{experiment.docker_file}"', '|',
+                'docker', 'build', '--no-cache', '-t',
+                experiment.user_name, '-', '&&', 'docker', 'run',
+                '--rm', '--name', experiment.user_name, '--gpus', 'all']
+                + resource_folder_arg + user_arg
+                + env_args + [f'{experiment.user_name}'])
 
         # Create log files for this experiment
         stdout_file = os.path.join(
