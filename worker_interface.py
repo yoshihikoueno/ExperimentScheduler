@@ -148,26 +148,27 @@ class WorkerInterface:
                     '/etc/localtime:/etc/localtime:ro']
         tty = ['-t'] if self.is_tty else []
 
-        cmd = (['ssh'] + tty + [
-            self.host,
-            'echo', f'"{experiment.docker_file}"', '|',
-            'docker', 'build', '--no-cache', '-t',
-            experiment.user_name, '-', '&&', 'docker', 'run',
-            '--rm', '--name', experiment.user_name, '--gpus', 'all']
-            + resource_folder_arg + user_arg
-            + env_args + [f'{experiment.user_name}'])
+        with tempfile.NamedTemporaryFile() as f:
+            fname = f.name
+            f.write(experiment.docker_file.encode())
+            f.flush()
 
-        # Create log files for this experiment
-        stdout_file = os.path.join(
-            self._logdir, f'{experiment.unique_id}_stdout')
-        stderr_file = os.path.join(
-            self._logdir, f'{experiment.unique_id}_stderr')
-        with open(stdout_file, 'w') as out, open(stderr_file, 'w') as err:
-            pid = subprocess.Popen(cmd, stdout=out, stderr=err, shell=False)
-            self._experiment_processes[experiment.unique_id] = pid
+            cat_cmd = ['cat', fname]
+            docker_build_cmd = ['docker', 'build', '--no-cache', '-t', experiment.user_name, '-']
+            docker_run_cmd = ['docker', 'run', '--rm', '--name', experiment.user_name, '--gpus', 'all']
+            docker_run_cmd += resource_folder_arg + user_arg + env_args
+            remote_cmd = docker_build_cmd + ['&&'] + docker_run_cmd + [experiment.user_name]
+            cmd = ['ssh'] + tty + [self.host] + remote_cmd
 
-        self._active_experiments[experiment.unique_id] = (
-            experiment, device_indices)
+            # Create log files for this experiment
+            stdout_file = os.path.join(self._logdir, f'{experiment.unique_id}_stdout')
+            stderr_file = os.path.join(self._logdir, f'{experiment.unique_id}_stderr')
+            with open(stdout_file, 'w') as out, open(stderr_file, 'w') as err:
+                cat_ps = subprocess.Popen(cat_cmd, stdout=subprocess.PIPE, stderr=None, shell=False)
+                pid = subprocess.Popen(cmd, stdout=out, stderr=err, stdin=cat_ps.stdout, shell=False)
+
+        self._experiment_processes[experiment.unique_id] = pid
+        self._active_experiments[experiment.unique_id] = experiment, device_indices
 
     def stop_experiment(self, experiment_id, reason):
         assert experiment_id in self._experiment_processes
