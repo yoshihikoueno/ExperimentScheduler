@@ -10,18 +10,27 @@ from task import TaskType
 
 
 class Scheduler:
-    def __init__(self, workers, logdir, experiment_time_limit,
-                 reorganize_experiments_interval):
-        assert(experiment_time_limit >= 0)
+    def __init__(
+            self,
+            workers,
+            logdir,
+            experiment_time_limit,
+            reorganize_experiments_interval,
+    ):
+        assert experiment_time_limit >= 0
+
         # List of experiments handled as a queue. Contains Experiment objects.
         # As long as another experiment is running or is in the pending queue
         # of that same user, experiments will be put in this queue
         self.waiting_experiments = []
+
         # List of pending experiments is handled as a queue. Contains Experiment
         # objects
         self.pending_experiments = []
+
         # Maps experiment_id to experiment
         self.active_experiments = dict()
+
         # Maps experiment_id to experiment
         self.finished_experiments = dict()
 
@@ -36,39 +45,36 @@ class Scheduler:
         self._active_experiment_clusters = dict()
 
         self._logdir = logdir
+
         # In hours, 0 means no limit
         self._experiment_time_limit = experiment_time_limit
+
         # In minutes, 0 means reorganization at every update step
         self._reorganize_experiments_interval = reorganize_experiments_interval
         self._t_last_reorganize = datetime.datetime.now()
-
-        # Register shutdown callback
-        atexit.register(self.shutdown)
 
     @property
     def experiment_time_limit(self):
         return self._experiment_time_limit
 
     def get_experiment_stdout_path(self, experiment_id):
-        return os.path.join(self._logdir, '{}_stdout'.format(experiment_id))
+        return os.path.join(self._logdir, f'{experiment_id}_stdout')
 
     def get_experiment_stderr_path(self, experiment_id):
-        return os.path.join(self._logdir, '{}_stderr'.format(experiment_id))
+        return os.path.join(self._logdir, f'{experiment_id}_stderr')
 
     def get_device_states(self):
-        device_states = dict()
-        for worker in self.workers.values():
-            device_states[worker.host] = worker.device_states
+        device_states = {
+            worker.host: worker.device_states
+            for worker in self.workers.values()
+        }
 
         return device_states
 
     def update(self):
         self._handle_web_interface_tasks()
-
         self._handle_finished_experiments()
-
         self._stop_invalid_experiments()
-
         self._handle_waiting_experiments()
 
         if ((datetime.datetime.now() - self._t_last_reorganize).seconds / 60.0
@@ -115,8 +121,7 @@ class Scheduler:
 
                 self.pending_experiments.append(new_experiment)
 
-                logging.info("Experiment '{}' of user '{}' queued.".format(
-                    new_experiment.name, new_experiment.user_name))
+                logging.info(f"Experiment '{new_experiment.name}' of user '{new_experiment.user_name}' queued.")
 
             elif task.task_type == TaskType.STOP_EXPERIMENT:
                 experiment_id = task.kvargs['experiment_id']
@@ -135,7 +140,7 @@ class Scheduler:
                 if stop_experiment is True:
                     continue
 
-                   # Check if in pending queue
+                # Check if in pending queue
                 for i, experiment in enumerate(self.pending_experiments):
                     if experiment.unique_id == experiment_id:
                         logging.info("Stop request from host '{}' for experiment '{}' "
@@ -235,8 +240,7 @@ class Scheduler:
                 del active_experiment_list[i]
 
         # Now assign remaining devices in a round-robin fashion
-        combined_experiment_list = (active_experiment_list
-                                    + self.pending_experiments)
+        combined_experiment_list = active_experiment_list + self.pending_experiments
         # List of experiment indices for single GPU experiments. We want to assign
         # them after all multi GPU experiments, but still we want to reserve a
         # device of course.
@@ -370,21 +374,25 @@ class Scheduler:
             else:
                 break
 
-    def _start_experiment(self, experiment, worker_to_devices,
-                          is_restart):
+    def _start_experiment(
+            self,
+            experiment,
+            worker_to_devices,
+            is_restart,
+    ):
         worker_hosts = list(worker_to_devices.keys())
         num_devices_list = list(worker_to_devices.values())
 
         # Build and start with cluster config (only necessary if more
         # than one worker)
         if experiment.framework == 'tensorflow' and len(worker_hosts) > 1:
-            chief_host = worker_hosts[0] + ':{}'.format(
-                self.workers[worker_hosts[0]].get_free_port())
-            slave_hosts = [worker_host + ':{}'.format(
-                self.workers[worker_host].get_free_port())
-                for worker_host in worker_hosts[1:]]
+            chief_host = worker_hosts[0] + f':{self.workers[worker_hosts[0]].get_free_port()}'
+            slave_hosts = [
+                worker_host + f':{self.workers[worker_host].get_free_port()}'
+                for worker_host in worker_hosts[1:]
+            ]
             cluster_config = {'chief': [chief_host]}
-            if len(slave_hosts) > 0:
+            if slave_hosts:
                 cluster_config['worker'] = slave_hosts
 
             # Start slave servers
@@ -411,13 +419,11 @@ class Scheduler:
 
         if is_restart is False:
             experiment.start_time = datetime.datetime.now()
-            logging.info("Experiment '{}' of user '{}' started.".format(
-                experiment.name, experiment.user_name))
-        assert(experiment.unique_id not in self.active_experiments)
+            logging.info(f"Experiment '{experiment.name}' of user '{experiment.user_name}' started.")
+        assert experiment.unique_id not in self.active_experiments
         self.active_experiments[experiment.unique_id] = experiment
-        assert(experiment.unique_id not in self._active_experiment_clusters)
-        self._active_experiment_clusters[experiment.unique_id] = (
-            worker_to_devices)
+        assert experiment.unique_id not in self._active_experiment_clusters
+        self._active_experiment_clusters[experiment.unique_id] = worker_to_devices
 
     def _stop_experiment(self, experiment_id, reason, pending_restart=False):
         experiment = self.active_experiments[experiment_id]
@@ -447,8 +453,10 @@ class Scheduler:
         del self.active_experiments[experiment_id]
         del self._active_experiment_clusters[experiment_id]
 
-    # Returns a list of tuples of (experiment_id, reason))
     def _get_invalid_experiments(self):
+        '''
+        Returns a list of tuples of (experiment_id, reason))
+        '''
         result = []
         for experiment_id, experiment in self.active_experiments.items():
             # Check if timeout
@@ -469,10 +477,12 @@ class Scheduler:
         return result
 
 
-# Checks if the experiment can fit in free_worker_devices
-# and returns a tuple consisting of a boolean indicating this result and
-# the assigned worker to devices map
 def _can_fit(experiment, free_worker_devices):
+    '''
+    Checks if the experiment can fit in free_worker_devices
+    and returns a tuple consisting of a boolean indicating this result and
+    the assigned worker to devices map
+    '''
     total_len = 0
     for worker, num_devices in free_worker_devices.items():
         total_len += num_devices
