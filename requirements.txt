@@ -1,0 +1,5 @@
+flask-login==0.4.1
+flask-wtf==0.14.2
+numpy==1.16.2
+protobuf==3.6.1
+python-ldap==3.0.0
