@@ -1,0 +1,9 @@
+{
+    "host_addresses": ["127.0.0.1"],
+    "initial_tf_port": 2222,
+    "experiment_time_limit": 24,
+    "ups": 0.2,
+    "reorganize_experiments_interval": 10,
+    "resource_folder": "/mnt/dataset",
+    "docker_resource_folder": "/kw_resources"
+}
