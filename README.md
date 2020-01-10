@@ -71,3 +71,14 @@ python main.py --help
 #   --public         Whether to publish web server to the local network
 #   --port PORT      The port to use for the web interface. Defaults to 5000
 ```
+
+# Screenshot
+
+![screenshot](./screenshot.jpg)
+
+
+# NOTE
+
+This scheduler is developed as an **internal** tool to make it easier
+to schedule experiments on a server, so the documentation and implementation
+may not be appropriate for general usage outside our environment.
