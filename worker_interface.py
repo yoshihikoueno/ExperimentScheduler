@@ -143,9 +143,13 @@ class WorkerInterface:
         # 1003: group id of gescheduler
         # We also need to add the localtime file, so that the timezone of the host
         # and the container will be the same
-        user_arg = ['-v', '/etc/passwd:/etc/passwd:ro', '-v',
-                    '/etc/group:/etc/group:ro', '-u', '$(id -u):1003', '-v',
-                    '/etc/localtime:/etc/localtime:ro']
+        user_arg = ['-v', '/etc/passwd:/etc/passwd:ro',
+                    '-v', '/etc/group:/etc/group:ro',
+                    '-v', '/etc/localtime:/etc/localtime:ro',
+                    '-v', '/sys:/sys:ro',
+                    '-v', '/dev/shm:/dev/shm',
+                    '-u', '$(id -u):1003',
+                    ]
         tty = ['-t'] if self.is_tty else []
 
         with tempfile.NamedTemporaryFile() as f:
