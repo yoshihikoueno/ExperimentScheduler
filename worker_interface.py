@@ -258,7 +258,7 @@ class WorkerInterface:
         except Exception as e:
             raise RuntimeError(f'Failed to access GPUS\n{e}')
         data = xmltodict.parse(nvidia_smi_out)
-        num_gpu = data['nvidia_smi_log']['attached_gpus']
+        num_gpu = int(data['nvidia_smi_log']['attached_gpus'])
 
         if num_gpu < 1: raise RuntimeError('No GPU found')
         return num_gpu
