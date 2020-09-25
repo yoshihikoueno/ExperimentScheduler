@@ -4,14 +4,14 @@ import json
 import subprocess
 import logging
 import sys
+import xmltodict
 
 
 class WorkerInterface:
-    def __init__(self, host, tf_ports, num_devices, logdir, resource_folder,
-                 docker_resource_folder):
+    def __init__(self, host, tf_ports, logdir, resource_folder, docker_resource_folder):
         self.host = host
         # Contains booleans whether the device at its index is free or not
-        self._device_states = [True] * num_devices
+        self._device_states = [True] * self.get_num_gpus()
 
         # Maps experiment_id to a tuple of (process, port, device_ids)
         self._tf_server_processes = dict()
@@ -251,3 +251,14 @@ class WorkerInterface:
         env['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
         env['CUDA_VISIBLE_DEVICES'] = ','.join(map(str, device_indices))
         return env
+
+    def get_num_gpus(self):
+        try:
+            nvidia_smi_out = subprocess.check_output(['ssh', self.host, 'nvidia-smi', '-x', '-q'])
+        except Exception as e:
+            raise RuntimeError(f'Failed to access GPUS\n{e}')
+        data = xmltodict.parse(nvidia_smi_out)
+        num_gpu = data['nvidia_smi_log']['attached_gpus']
+
+        if num_gpu < 1: raise RuntimeError('No GPU found')
+        return num_gpu

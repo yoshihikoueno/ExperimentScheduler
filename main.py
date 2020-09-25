@@ -37,23 +37,18 @@ def run(logdir, config, port, public):
 
     config = load_config(config)
 
-    num_devices_per_worker = util_ops.get_num_devices()
-    if num_devices_per_worker < 1:
-        raise ValueError('There must be at least one GPU.')
-
     # In hours, 0 for no limit
     experiment_time_limit = config.experiment_time_limit
     initial_tf_port = config.initial_tf_port
     # We could run up to one tf server per device on one worker, so we need to
     # have that many ports
-    tf_ports = list(range(initial_tf_port, initial_tf_port + num_devices_per_worker))
+    tf_ports = list(range(initial_tf_port, initial_tf_port + 7))
     hosts = config.host_addresses
 
     workers = {
         host: worker_interface.WorkerInterface(
             host=host,
             tf_ports=tf_ports,
-            num_devices=num_devices_per_worker,
             logdir=logdir,
             resource_folder=config.resource_folder,
             docker_resource_folder=config.docker_resource_folder,
