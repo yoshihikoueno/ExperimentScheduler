@@ -2,3 +2,4 @@ flask-login==0.4.1
 flask-wtf==0.14.3
 numpy==1.16.2
 python-ldap==3.0.0
+xmltodict
