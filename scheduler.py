@@ -98,28 +98,12 @@ class Scheduler:
         for task in tasks:
             if task.task_type == TaskType.NEW_EXPERIMENT:
                 new_experiment = task.kvargs['experiment']
+                pending_and_active = (*self.pending_experiments, *self.active_experiments.values())
 
                 # Check if this experiment should be put in waiting or pending queue.
-                handled = False
-                for experiment in self.pending_experiments:
-                    if experiment.user_name == new_experiment.user_name:
-                        self.waiting_experiments.append(new_experiment)
-                        handled = True
-                        break
-
-                if handled:
-                    continue
-
-                for experiment in self.active_experiments.values():
-                    if experiment.user_name == new_experiment.user_name:
-                        self.waiting_experiments.append(new_experiment)
-                        handled = True
-                        break
-
-                if handled:
-                    continue
-
-                self.pending_experiments.append(new_experiment)
+                if new_experiment.user_name in map(lambda x: x.user_name, pending_and_active):
+                    self.waiting_experiments.append(new_experiment)
+                else: self.pending_experiments.append(new_experiment)
 
                 logging.info(f"Experiment '{new_experiment.name}' of user '{new_experiment.user_name}' queued.")
 
