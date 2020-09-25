@@ -158,10 +158,10 @@ class WorkerInterface:
             f.flush()
 
             cat_cmd = ['cat', fname]
-            docker_build_cmd = ['docker', 'build', '--no-cache', '-t', experiment.user_name, '-']
-            docker_run_cmd = ['docker', 'run', '--rm', '--name', experiment.user_name, '--gpus', 'all']
+            docker_build_cmd = ['docker', 'build', '--no-cache', '-t', experiment.unique_id, '-']
+            docker_run_cmd = ['docker', 'run', '--rm', '--name', experiment.unique_id, '--gpus', 'all']
             docker_run_cmd += resource_folder_arg + user_arg + env_args
-            remote_cmd = docker_build_cmd + ['&&'] + docker_run_cmd + [experiment.user_name]
+            remote_cmd = docker_build_cmd + ['&&'] + docker_run_cmd + [experiment.unique_id]
             cmd = ['ssh'] + tty + [self.host] + remote_cmd
 
             # Create log files for this experiment
@@ -191,12 +191,12 @@ class WorkerInterface:
             # Stop container and remove image
             subprocess.call(
                 ['ssh', f'{self.host}', 'docker',
-                    'kill', experiment.user_name],
+                    'kill', experiment.unique_id],
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             )
             subprocess.call(
                 ['ssh', f'{self.host}', 'docker',
-                    'rmi', '-f', experiment.user_name],
+                    'rmi', '-f', experiment.unique_id],
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             )
             return_code = f'Killed: {reason}'
@@ -204,7 +204,7 @@ class WorkerInterface:
             # Remove image
             subprocess.call(
                 ['ssh', f'{self.host}', 'docker',
-                    'rmi', '-f', experiment.user_name],
+                    'rmi', '-f', experiment.unique_id],
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             )
             if return_code == 0:
