@@ -3,6 +3,7 @@ import logging
 import datetime
 import os
 import atexit
+import pickle
 
 import numpy as np
 
@@ -16,6 +17,7 @@ class Scheduler:
             logdir,
             experiment_time_limit,
             reorganize_experiments_interval,
+            auto_save_sessions=True,
     ):
         assert experiment_time_limit >= 0
 
@@ -52,6 +54,7 @@ class Scheduler:
         # In minutes, 0 means reorganization at every update step
         self._reorganize_experiments_interval = reorganize_experiments_interval
         self._t_last_reorganize = datetime.datetime.now()
+        self.auto_save_sessions = auto_save_sessions
 
     @property
     def experiment_time_limit(self):
@@ -62,6 +65,25 @@ class Scheduler:
 
     def get_experiment_stderr_path(self, experiment_id):
         return os.path.join(self._logdir, f'{experiment_id}_stderr')
+
+    def get_session_path(self):
+        return os.path.join(self._logdir, f'session.pkl')
+
+    def save_session(self):
+        with open(self.get_session_path(), 'wb') as f:
+            pickle.dump(
+                dict(
+                    finished_experiments=self.finished_experiments,
+                ), f,
+            )
+        return
+
+    def load_session(self):
+        if not os.path.exists(self.get_session_path()): return
+        with open(self.get_session_path(), 'rb') as f:
+            data = pickle.load(f)
+        self.finished_experiments = data['finished_experiments']
+        return
 
     def get_device_states(self):
         device_states = {
@@ -83,6 +105,9 @@ class Scheduler:
             self._t_last_reorganize = datetime.datetime.now()
         else:
             self._try_start_experiments()
+
+        if self.auto_save_sessions:
+            self.save_session()
 
     def shutdown(self):
         logging.info("Shutting Down.")
