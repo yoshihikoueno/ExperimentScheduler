@@ -148,7 +148,7 @@ class WorkerInterface:
                     '-v', '/etc/localtime:/etc/localtime:ro',
                     '-v', '/sys:/sys:ro',
                     '-v', '/dev/shm:/dev/shm',
-                    '-u', '$(id -u):1003',
+                    '-u', f'$(id -u {experiment.user_name}):$(id -g {experiment.user_name})',
                     ]
         tty = ['-t'] if self.is_tty else []
 
