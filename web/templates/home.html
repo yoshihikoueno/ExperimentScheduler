@@ -141,9 +141,14 @@
     <td>{{e.name}}</td>
     <td>{{e.user_name}}</td>
     <td>{{e.unique_id}}</td>
-    <td><form method="post" name="activeexperimentform" onsubmit="return confirm('Really stop this experiment?')" style="display: inline; margin: 0px; padding: 0px" action="/home/post">
-        <input type="submit" value="Stop" name="{{e.unique_id}}" class="btn btn-secondary">
-    </form></td>
+    <td>
+        <form method="post" name="activeexperimentform" style="display: inline; margin: 0px; padding: 0px" action="/home/post">
+            <input type="submit" value="Dockerfile" name="{{e.unique_id}}" class="btn btn-secondary">
+        </form>
+        <form method="post" name="activeexperimentform" onsubmit="return confirm('Really stop this experiment?')" style="display: inline; margin: 0px; padding: 0px" action="/home/post">
+            <input type="submit" value="Stop" name="{{e.unique_id}}" class="btn btn-secondary">
+        </form>
+    </td>
   </tr>
   {% endfor %}
 </table><br>
@@ -163,9 +168,14 @@
     <td>{{e.name}}</td>
     <td>{{e.user_name}}</td>
     <td>{{e.unique_id}}</td>
-    <td><form method="post" name="activeexperimentform" onsubmit="return confirm('Really stop this experiment?')" style="display: inline; margin: 0px; padding: 0px" action="/home/post">
-        <input type="submit" value="Stop" name="{{e.unique_id}}" class="btn btn-secondary">
-    </form></td>
+    <td>
+        <form method="post" name="activeexperimentform" style="display: inline; margin: 0px; padding: 0px" action="/home/post">
+            <input type="submit" value="Dockerfile" name="{{e.unique_id}}" class="btn btn-secondary">
+        </form>
+        <form method="post" name="activeexperimentform" onsubmit="return confirm('Really stop this experiment?')" style="display: inline; margin: 0px; padding: 0px" action="/home/post">
+            <input type="submit" value="Stop" name="{{e.unique_id}}" class="btn btn-secondary">
+        </form>
+    </td>
   </tr>
   {% endfor %}
 </table><br>
@@ -189,6 +199,7 @@
       <form method="post" name="activeexperimentform" style="display: inline; margin: 0px; padding: 0px" action="/home/post">
         <input type="submit" value="Stdout" name="{{e.unique_id}}" class="btn btn-secondary">
         <input type="submit" value="Stderr" name="{{e.unique_id}}" class="btn btn-secondary">
+        <input type="submit" value="Dockerfile" name="{{e.unique_id}}" class="btn btn-secondary">
       </form>
       <form method="post" name="activeexperimentform" onsubmit="return confirm('Really stop this experiment?')" style="display: inline; margin: 0px; padding: 0px" action="/home/post">
         <input type="submit" value="Stop" name="{{e.unique_id}}" class="btn btn-secondary">
@@ -219,8 +230,11 @@
       <td>{{e.user_name}}</td>
       <td>{{e.unique_id}}</td>
       <td>{{e.finish_return_code}}</td>
-      <td><input type="submit" value="Stdout" name="{{e.unique_id}}" class="btn btn-secondary">
-        <input type="submit" value="Stderr" name="{{e.unique_id}}" class="btn btn-secondary"></td>
+      <td>
+        <input type="submit" value="Stdout" name="{{e.unique_id}}" class="btn btn-secondary">
+        <input type="submit" value="Stderr" name="{{e.unique_id}}" class="btn btn-secondary">
+        <input type="submit" value="Dockerfile" name="{{e.unique_id}}" class="btn btn-secondary">
+      </td>
     </tr>
     {% endfor %}
   </form>

@@ -179,6 +179,13 @@ class WebInterface():
                         return Response(f.read(), mimetype='text/plain')
                 else:
                     flash('Log not found.', 'danger')
+            elif 'Dockerfile' in list(request.form.values()):
+                experiment_id = list(request.form.keys())[0]
+                try:
+                    experiment = scheduler_ref.get_experiment(experiment_id)
+                    return Response(experiment.docker_file, mimetype='text/plain')
+                except Exception as e:
+                    flash(f'Error: {e} ', 'danger')
 
             else:
                 request_dict = dict(request.form)

@@ -69,6 +69,15 @@ class Scheduler:
     def get_session_path(self):
         return os.path.join(self._logdir, f'session.pkl')
 
+    def get_experiment(self, experiment_id):
+        for experiment in self.waiting_experiments + self.pending_experiments:
+            if experiment.unique_id == experiment_id:
+                return experiment
+        return dict(
+            **self.finished_experiments,
+            **self.active_experiments,
+        ).get(experiment_id)
+
     def save_session(self):
         with open(self.get_session_path(), 'wb') as f:
             pickle.dump(
