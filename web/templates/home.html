@@ -89,15 +89,24 @@
     <div class="form-group">
       <label for="framework" class="form-select-label">Number of GPUs to use</label>
         <select name="gpusettings" id="gpusettings" class="form-control">
-          <option value=1>1</option>
-          <option value=2>2</option>
-          <option value=3>3</option>
-          <option value=4>4</option>
-          <option value=5>5</option>
-          <option value=6>6</option>
-          <option value=7>7</option>
-          <option value=8>8</option>
+          {% for i in range(1, total_num_gpu + 1) %}
+              <option value={{i}}>{{i}}</option>
+          {% endfor %}
         </select>
+    </div>
+
+    <div class="form-group">
+      <label for="framework" class="form-select-label">Host selection</label>
+      {% for worker_id in workers %}
+          <label class="checkbox-inline">
+              <input type="checkbox" checked data-toggle="toggle" id="include_{{worker_id}}" name="include_{{worker_id}}" value="include_{{worker_id}}" > {{worker_id}}
+          </label>
+      {% endfor %}
+      <small class="form-text text-muted">
+          Choose hosts that you want to use.
+          If you don't turn on the multi-worker feature, then the scheduler will choose one that is available
+          and your experiment will be run on that worker.
+      </small>
     </div>
 
     <button type="submit"class="btn btn-primary">Submit</button>

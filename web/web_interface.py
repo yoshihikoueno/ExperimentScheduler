@@ -114,16 +114,15 @@ class WebInterface():
                             'Used', active_experiment_to_color[
                                 scheduler_ref.workers[worker].get_experiment_id(column)]))
 
-            max_num_gpu = 0
-            for worker in scheduler_ref.workers.values():
-                if len(worker.device_states) > max_num_gpu:
-                    max_num_gpu = len(worker.device_states)
+            max_num_gpu = max(map(lambda x: len(x.device_states), scheduler_ref.workers.values()))
+            total_num_gpu = sum(map(lambda x: len(x.device_states), scheduler_ref.workers.values()))
 
             return render_template(
                 'home.html',
                 docker_resource_folder=self.docker_resource_folder,
                 workstation_load_table_content=workstation_load_table_content,
                 max_num_gpu=max_num_gpu,
+                total_num_gpu=total_num_gpu,
                 active_experiment_to_color=active_experiment_to_color,
                 workers=scheduler_ref.workers,
                 pending_experiments=scheduler_ref.pending_experiments,
