@@ -14,12 +14,12 @@ class ExperimentBuilder():
     return experiment.Experiment(
       docker_file=experiment_dict['dockerfile'],
       name=experiment_dict['experimentname'],
-      gpu_settings=(experiment_dict['gpusettings'] if 'gpusettings'
-                    in experiment_dict else 'forcesinglegpu'),
       use_multiple_workers='multiworker' in experiment_dict,
-      can_restart='canrestart' in experiment_dict,
       framework=experiment_dict['framework'],
-      user_name=experiment_dict['username'])
+      gpu_settings=int(experiment_dict['gpusettings']),
+      user_name=experiment_dict['username'],
+      can_be_run_on=experiment_dict['can_be_run_on'],
+    )
 
   def is_valid_experiment(self, experiment_dict):
     if 'dockerfile' not in experiment_dict:
@@ -28,6 +28,8 @@ class ExperimentBuilder():
       return False, 'No experiment name specified.'
     if 'framework' not in experiment_dict:
       return False, 'Framework missing.'
+    if 'gpusettings' not in experiment_dict:
+      return False, 'GPU settings missing.'
     if 'username' not in experiment_dict:
       return False, 'User name missing.'
     if not os.path.exists(os.path.join(self.resource_folder,
@@ -36,20 +38,21 @@ class ExperimentBuilder():
 
     if experiment_dict['framework'] not in ['tensorflow', 'other']:
       return False, 'Invalid development framework.'
-    gpusettings = (experiment_dict['gpusettings'] if 'gpusettings'
-                   in experiment_dict else 'forcesinglegpu')
-    if (gpusettings not in ['useavailable', 'forcesinglegpu']):
-      return False, 'Invalid GPU settings.'
 
-    if ('canrestart' not in experiment_dict
-        and gpusettings != 'forcesinglegpu'):
-      return False, 'Only single GPU can be used when restart is impossible.'
+    if not experiment_dict['gpusettings'].isdigit() or int(experiment_dict['gpusettings']) <= 0:
+      return False, 'GPU settings must be integer.'
+
+    if not isinstance(experiment_dict['can_be_run_on'], set):
+      return False, 'field can_be_run_on is invalid'
+
+    if not experiment_dict['can_be_run_on']:
+      return False, 'at least worker should be selected'
 
     if ('multiworker' in experiment_dict and experiment_dict['framework']
         != 'tensorflow'):
       return False, 'Using multi worker and not tensorflow is not implemented.'
 
-    if ('multiworker' in experiment_dict and gpusettings == 'forcesinglegpu'):
+    if ('multiworker' in experiment_dict and experiment_dict['gpusettings'] == 1):
       return False, 'Cannot use multiple workers and force single GPU use.'
 
     return True, 'Success.'

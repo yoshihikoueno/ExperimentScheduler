@@ -126,7 +126,6 @@ class WebInterface():
                 max_num_gpu=max_num_gpu,
                 active_experiment_to_color=active_experiment_to_color,
                 workers=scheduler_ref.workers,
-                waiting_experiments=scheduler_ref.waiting_experiments,
                 pending_experiments=scheduler_ref.pending_experiments,
                 active_experiments=scheduler_ref.active_experiments,
                 finished_experiments=scheduler_ref.finished_experiments,
@@ -190,6 +189,8 @@ class WebInterface():
             else:
                 request_dict = dict(request.form)
                 request_dict['username'] = current_user.uid
+                if 'can_be_run_on' not in request_dict:
+                    request_dict['can_be_run_on'] = set(scheduler_ref.workers)
                 # Create experiment request
                 success, msg = self.experiment_builder.is_valid_experiment(
                     request_dict)

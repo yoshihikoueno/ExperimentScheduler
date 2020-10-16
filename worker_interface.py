@@ -127,7 +127,7 @@ class WorkerInterface:
         # Assign devices
         device_indices = self._assign_free_device_indices(num_devices)
 
-        env = self._get_env(device_indices, tf_config_env)
+        env = self._get_env(tf_config_env=tf_config_env)
 
         env_args = []
         for k, v in env.items():
@@ -159,7 +159,10 @@ class WorkerInterface:
 
             cat_cmd = ['cat', fname]
             docker_build_cmd = ['docker', 'build', '--no-cache', '-t', experiment.unique_id, '-']
-            docker_run_cmd = ['docker', 'run', '--rm', '--name', experiment.unique_id, '--gpus', 'all']
+            docker_run_cmd = [
+                'docker', 'run', '--rm', '--name', experiment.unique_id,
+                '--gpus', '\'"device=' + ','.join(map(str, device_indices)) + '"\'',
+            ]
             docker_run_cmd += resource_folder_arg + user_arg + env_args
             remote_cmd = docker_build_cmd + ['&&'] + docker_run_cmd + [experiment.unique_id]
             cmd = ['ssh'] + tty + [self.host] + remote_cmd
@@ -244,12 +247,13 @@ class WorkerInterface:
         assert len(device_indices) == num_devices
         return device_indices
 
-    def _get_env(self, device_indices, tf_config_env):
+    def _get_env(self, device_indices=None, tf_config_env=None):
         env = os.environ.copy()
         if tf_config_env:
             env['TF_CONFIG'] = json.dumps(tf_config_env)
         env['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
-        env['CUDA_VISIBLE_DEVICES'] = ','.join(map(str, device_indices))
+        if device_indices:
+            env['CUDA_VISIBLE_DEVICES'] = ','.join(map(str, device_indices))
         return env
 
     def get_num_gpus(self):

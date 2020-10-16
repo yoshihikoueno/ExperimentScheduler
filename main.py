@@ -59,7 +59,6 @@ def run(logdir, config, port, public):
         workers=workers,
         logdir=logdir,
         experiment_time_limit=experiment_time_limit,
-        reorganize_experiments_interval=config.reorganize_experiments_interval,
     )
     experiment_scheduler.load_session()
 

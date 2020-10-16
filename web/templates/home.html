@@ -70,13 +70,6 @@
 
     <div class="form-group">
       <div class="form-check">
-        <input type="checkbox" id="canrestart" name="canrestart" value="canrestart" checked>
-        <label for="canrestart" class="form-check-label">Can be restarted</label>
-        <small class="form-text text-muted">Whether it is possible to restart your running program so that it continues from where it stopped. This is necessary
-           so that the scheduler can rearrange GPU assignments and optimize the overall resource usage.
-           Therefore if you cannot restart, you will only be assigned one GPU at maximum.</small>
-      </div>
-      <div class="form-check">
         <input type="checkbox" id="multiworker" name="multiworker" value="multiworker">
         <label for="multiworker" class="form-check-label">Can use multiple workers</label>
         <small class="form-text text-muted">Whether your program is able to support multi-worker execution. I.e., are you able to distribute your program on multiple computers?
@@ -94,14 +87,17 @@
     </div>
 
     <div class="form-group">
-      <div class="form-check">
-        <input type="radio" id="forcesinglegpu" name="gpusettings" value="forcesinglegpu">
-        <label for="forcesinglegpu" class="form-check-label">Force use single GPU</label>
-      </div>
-      <div class="form-check">
-        <input type="radio" id="useavailable" name="gpusettings" value="useavailable" checked>
-        <label for="useavailable" class="form-check-label">Use what is available</label>
-      </div>
+      <label for="framework" class="form-select-label">Number of GPUs to use</label>
+        <select name="gpusettings" id="gpusettings" class="form-control">
+          <option value=1>1</option>
+          <option value=2>2</option>
+          <option value=3>3</option>
+          <option value=4>4</option>
+          <option value=5>5</option>
+          <option value=6>6</option>
+          <option value=7>7</option>
+          <option value=8>8</option>
+        </select>
     </div>
 
     <button type="submit"class="btn btn-primary">Submit</button>
@@ -122,33 +118,6 @@
     {% for col in row %}
     <td style="background-color: {{col[1]}};">{{col[0]}}</td>
     {% endfor %}
-  </tr>
-  {% endfor %}
-</table><br>
-
-<table class="table table-striped table-dark"  id="waitingexperiments">
-  <caption>Waiting Experiments</caption>
-  <tr>
-    <th>Schedule Time</th>
-    <th>Experiment Name</th>
-    <th>User Name</th>
-    <th>Experiment ID</th>
-    <th>Actions</th>
-  </tr>
-  {% for e in waiting_experiments %}
-  <tr>
-    <td>{{e.schedule_time}}</td>
-    <td>{{e.name}}</td>
-    <td>{{e.user_name}}</td>
-    <td>{{e.unique_id}}</td>
-    <td>
-        <form method="post" name="activeexperimentform" style="display: inline; margin: 0px; padding: 0px" action="/home/post">
-            <input type="submit" value="Dockerfile" name="{{e.unique_id}}" class="btn btn-secondary">
-        </form>
-        <form method="post" name="activeexperimentform" onsubmit="return confirm('Really stop this experiment?')" style="display: inline; margin: 0px; padding: 0px" action="/home/post">
-            <input type="submit" value="Stop" name="{{e.unique_id}}" class="btn btn-secondary">
-        </form>
-    </td>
   </tr>
   {% endfor %}
 </table><br>
@@ -276,15 +245,6 @@
       } else {
           document.getElementById('multiworker').disabled = true;
           document.getElementById('multiworker').checked = false;
-      }
-
-      if (document.getElementById('canrestart').checked) {
-          document.getElementById('useavailable').disabled = false;
-          document.getElementById('forcesinglegpu').disabled = false;
-      } else {      
-          document.getElementById('useavailable').disabled = true;
-          document.getElementById('forcesinglegpu').disabled = true;
-          document.getElementById('forcesinglegpu').checked = true;
       }
   }
   
