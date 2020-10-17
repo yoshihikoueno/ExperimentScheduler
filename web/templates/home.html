@@ -97,16 +97,18 @@
 
     <div class="form-group">
       <label for="framework" class="form-select-label">Host selection</label>
-      {% for worker_id in workers %}
+      <div>
+          {% for worker_id in workers %}
           <label class="checkbox-inline">
               <input type="checkbox" checked data-toggle="toggle" id="include_{{worker_id}}" name="include_{{worker_id}}" value="include_{{worker_id}}" > {{worker_id}}
           </label>
-      {% endfor %}
-      <small class="form-text text-muted">
-          Choose hosts that you want to use.
-          If you don't turn on the multi-worker feature, then the scheduler will choose one that is available
-          and your experiment will be run on that worker.
-      </small>
+          {% endfor %}
+          <small class="form-text text-muted">
+              Choose hosts that you want to use.
+              If you don't turn on the multi-worker feature, then the scheduler will choose one that is available
+              and your experiment will be run on that worker.
+          </small>
+      </div>
     </div>
 
     <button type="submit"class="btn btn-primary">Submit</button>

@@ -188,8 +188,9 @@ class WebInterface():
             else:
                 request_dict = dict(request.form)
                 request_dict['username'] = current_user.uid
-                if 'can_be_run_on' not in request_dict:
-                    request_dict['can_be_run_on'] = set(scheduler_ref.workers)
+                request_dict['can_be_run_on'] = {
+                    key[len('include_'):] for key in request_dict if key.startswith('include_')
+                }
                 # Create experiment request
                 success, msg = self.experiment_builder.is_valid_experiment(
                     request_dict)
