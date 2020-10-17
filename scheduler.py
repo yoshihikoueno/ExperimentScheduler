@@ -293,9 +293,7 @@ def _can_fit(experiment, free_worker_devices):
     and returns a tuple consisting of a boolean indicating this result and
     the assigned worker to devices map
     '''
-    total_len = 0
-    for worker, num_devices in free_worker_devices.items():
-        total_len += num_devices
+    total_len = sum(free_worker_devices.values())
 
     if total_len == 0:
         return False, {}
@@ -307,6 +305,7 @@ def _can_fit(experiment, free_worker_devices):
     suitable_worker = None
     num_min_devices = 99999
     for worker, num_devices in free_worker_devices.items():
+        if worker not in experiment.can_be_run_on: continue
         if experiment.gpu_settings <= num_devices < num_min_devices:
             suitable_worker = worker
             num_min_devices = num_devices
