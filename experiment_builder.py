@@ -46,7 +46,7 @@ class ExperimentBuilder():
       return False, 'field can_be_run_on is invalid'
 
     if not experiment_dict['can_be_run_on']:
-      return False, 'at least worker should be selected'
+      return False, 'at least one worker should be selected'
 
     if ('multiworker' in experiment_dict and experiment_dict['framework']
         != 'tensorflow'):
