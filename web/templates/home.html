@@ -144,7 +144,7 @@
   </tr>
   {% for e in pending_experiments %}
   <tr>
-    <td>{{e.schedule_time}}</td>
+    <td>{{e.schedule_time.strftime('%Y-%m-%d %H:%M')}}</td>
     <td>{{e.name}}</td>
     <td>{{e.user_name}}</td>
     <td>{{e.unique_id}}</td>
@@ -171,7 +171,7 @@
   </tr>
   {% for id, e in active_experiments.items() %}
   <tr>
-    <td>{{e.start_time}}</td>
+    <td>{{e.start_time.strftime('%Y-%m-%d %H:%M')}}</td>
     <td>{{e.name}}</td>
     <td>{{e.user_name}}</td>
     <td style="background-color: {{active_experiment_to_color[id]}};">{{e.unique_id}}</td>
@@ -204,8 +204,8 @@
   <form method="post" name="finishedexperimentform" action="/home/post">
     {% for e in finished_experiments.values()|sort(attribute='finish_time', reverse=True) %}
     <tr>
-      <td>{{e.start_time}}</td>
-      <td>{{e.finish_time}}</td>
+      <td>{{e.start_time.strftime('%Y-%m-%d %H:%M')}}</td>
+      <td>{{e.finish_time.strftime('%Y-%m-%d %H:%M')}}</td>
       <td>{{e.name}}</td>
       <td>{{e.user_name}}</td>
       <td>{{e.unique_id}}</td>
