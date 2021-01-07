@@ -13,19 +13,6 @@
   The scheduler tries to maximize resource usage, while keeping waiting times for everyone low.
   Therefore it aims to run as many programs as possible in parallel.
 
-  <br><br>
-  To account for both a low and a high number of queued programs, it might be necessary to redistribute the available resources
-  among pending and active experiments, leading to situations where your program will be restarted.
-  If your program cannot restart and continue where it left off, you will only be assigned one GPU at maximum.
-
-  <br><br>
-  Each user can only have one program in pending and active experiments. You can still queue further experiments,
-  however they will be put into the waiting queue until your other experiment finishes.
-
-  <br><br>
-  The scheduler will set environment variables <b><i>CUDA_VISIBLE_DEVICES</i></b> and optionally <b><i>TF_CONFIG</i></b> for multi worker setup to give
-  the program information about the available environment.
-
   {% if max_time %}
   <br><br>
   There is currently a maximum time set until your program will be stopped.
@@ -44,9 +31,7 @@
   <h2>Usage Notes</h2>
   <ul>
     <li>Please make sure that you fully utilize the resources that you are assigned, otherwise the scheduler might stop your program.</li>
-    <li>Do not use resources you are not assigned to.</li>
-    <li>Please try to keep CPU usage low in your program. E.g. do preprocessing or evaluation on your own computer</li>
-    <li>Please try to avoid unnecessary load. E.g. training after your model is already converged, or too loose hyper parameter search</li>
+    <li>Please try to keep CPU usage low in your program.</li>
     <li>And of course only use the workstation for your research!</li>
   </ul>
 </p>
