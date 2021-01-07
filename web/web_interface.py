@@ -100,19 +100,21 @@ class WebInterface():
                     i % len(color_list)]
 
             workstation_load_table_content = []
-            for row in range(len(scheduler_ref.workers)):
-                worker = list(scheduler_ref.workers.keys())[row]
-                workstation_load_table_content.append([
-                    (worker, '')])
-                for column in range(len(list(
-                        scheduler_ref.workers.values())[row].device_states)):
-                    if (scheduler_ref.workers[worker].device_states[column] is True):
-                        workstation_load_table_content[row].append(
-                            ('Free', ''))
+            for worker_name, worker in scheduler_ref.workers.items():
+                worker_content = [(worker_name, '')]
+                workstation_load_table_content.append(worker_content)
+                for device_id, is_free in enumerate(worker.device_states):
+                    if is_free:
+                        worker_content.append(('Free', ''))
                     else:
-                        workstation_load_table_content[row].append((
-                            'Used', active_experiment_to_color[
-                                scheduler_ref.workers[worker].get_experiment_id(column)]))
+                        try:
+                            worker_content.append(
+                                (
+                                    'Used',
+                                    active_experiment_to_color[worker.get_experiment_id(device_id)],
+                                ))
+                        except RuntimeError:
+                            worker_content.append(('Error', 'violet'))
 
             max_num_gpu = max(map(lambda x: len(x.device_states), scheduler_ref.workers.values()))
             total_num_gpu = sum(map(lambda x: len(x.device_states), scheduler_ref.workers.values()))
