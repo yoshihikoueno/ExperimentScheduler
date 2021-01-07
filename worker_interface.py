@@ -5,6 +5,7 @@ import subprocess
 import logging
 import sys
 import xmltodict
+import pprint
 
 
 class WorkerInterface:
@@ -43,7 +44,10 @@ class WorkerInterface:
         for experiment, device_indices in self._active_experiments.values():
             if device_index in device_indices:
                 return experiment.unique_id
-        raise RuntimeError
+        raise RuntimeError(
+            f'Failed to find an experiment occupying device:{device_index}.\n'
+            f'Active Experiments:\n{pprint.pformat(self._active_experiments)}'
+        )
 
     def shutdown(self):
         for p in self._tf_server_processes.values():
