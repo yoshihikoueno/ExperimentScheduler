@@ -20,7 +20,7 @@ class Experiment():
         self.finish_time = None
         # Can be 'killed: <reason>', 'success', 'error: <code>'
         self.finish_return_code = None
-        self.unique_id = f'{self.get_hash(): x}'
+        self.unique_id = f'{self.get_hash():x}'
         self.can_be_run_on = can_be_run_on
 
     def get_hash(self):
