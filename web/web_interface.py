@@ -139,13 +139,40 @@ class WebInterface():
         def docker_example():
             return render_template('docker_example.html', css_file=self.css_file)
 
-        @self.app.route('/home/post', methods=['GET', 'POST'])
+        @self.app.route('/<string:experiment_id>/stdout')
+        @login_required
+        def stdout(experiment_id):
+            if (experiment_id in [*scheduler_ref.active_experiments, *scheduler_ref.finished_experiments]):
+                log_path = scheduler_ref.get_experiment_stdout_path(experiment_id)
+
+                with open(log_path, 'r') as f:
+                    return Response(f.read(), mimetype='text/plain')
+            else:
+                flash('Log not found.', 'danger')
+
+        @self.app.route('/<string:experiment_id>/stderr')
+        @login_required
+        def stderr(experiment_id):
+            if (experiment_id in [*scheduler_ref.active_experiments, *scheduler_ref.finished_experiments]):
+                log_path = scheduler_ref.get_experiment_stderr_path(experiment_id)
+
+                with open(log_path, 'r') as f:
+                    return Response(f.read(), mimetype='text/plain')
+            else:
+                flash('Log not found.', 'danger')
+
+        @self.app.route('/<string:experiment_id>/dockerfile')
+        @login_required
+        def dockerfile(experiment_id):
+            try:
+                experiment = scheduler_ref.get_experiment(experiment_id)
+                return Response(experiment.docker_file, mimetype='text/plain')
+            except Exception as e:
+                flash(f'Error: {e} ', 'danger')
+
+        @self.app.route('/home/post', methods=['POST'])
         @login_required
         def post():
-            if request.method == 'GET':
-                return redirect(url_for('home'))
-
-            msg = ''
             # Check if it was a stop experiment button
             if 'Stop' in list(request.form.values()):
                 # We have to stop an experiment
@@ -153,39 +180,6 @@ class WebInterface():
                 t = task.Task(task_type=task.TaskType.STOP_EXPERIMENT,
                               experiment_id=experiment_id, host=request.host)
                 scheduler_ref.task_queue.put(t)
-
-            # Check if it was stdout button
-            elif 'Stdout' in list(request.form.values()):
-                experiment_id = list(request.form.keys())[0]
-                if (experiment_id in scheduler_ref.active_experiments
-                        or experiment_id in scheduler_ref.finished_experiments):
-                    log_path = scheduler_ref.get_experiment_stdout_path(
-                        experiment_id)
-
-                    with open(log_path, 'r') as f:
-                        return Response(f.read(), mimetype='text/plain')
-                else:
-                    flash('Log not found.', 'danger')
-
-            # Check if it was stderr button
-            elif 'Stderr' in list(request.form.values()):
-                experiment_id = list(request.form.keys())[0]
-                if (experiment_id in scheduler_ref.active_experiments
-                        or experiment_id in scheduler_ref.finished_experiments):
-                    log_path = scheduler_ref.get_experiment_stderr_path(
-                        experiment_id)
-
-                    with open(log_path, 'r') as f:
-                        return Response(f.read(), mimetype='text/plain')
-                else:
-                    flash('Log not found.', 'danger')
-            elif 'Dockerfile' in list(request.form.values()):
-                experiment_id = list(request.form.keys())[0]
-                try:
-                    experiment = scheduler_ref.get_experiment(experiment_id)
-                    return Response(experiment.docker_file, mimetype='text/plain')
-                except Exception as e:
-                    flash(f'Error: {e} ', 'danger')
 
             else:
                 request_dict = dict(request.form)
@@ -211,11 +205,10 @@ class WebInterface():
 
             return redirect(url_for('home'))
 
-        @self.app.route('/logout', methods=['GET', 'POST'])
+        @self.app.route('/logout', methods=['GET'])
         @login_required
         def logout():
             UserManager.logout(current_user)
-
             return redirect(url_for('login'))
 
     def run(self, public, port):

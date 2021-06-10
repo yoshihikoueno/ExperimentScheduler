@@ -25,7 +25,7 @@
   One thing to keep in mind however is that you cannot take any local build context into your container. Therefore you should supply your code
   via git or something similar within the <a href="https://docs.docker.com/engine/reference/builder/">Dockerfile</a>.
   Your directory in the workstation resource folder will be mounted at <i>{{ docker_resource_folder }}</i> within the docker container.
-  An example docker file can be found <a href="home/docker_example">here</a>.
+  An example docker file can be found <a href="{{ url_for('docker_example') }}">here</a>.
 
 
   <h2>Usage Notes</h2>
@@ -186,23 +186,21 @@
     <th>Return Code</th>
     <th>Actions</th>
   </tr>
-  <form method="post" name="finishedexperimentform" action="/home/post">
-    {% for e in finished_experiments.values()|sort(attribute='finish_time', reverse=True) %}
-    <tr>
-      <td>{{e.start_time.strftime('%Y-%m-%d %H:%M')}}</td>
-      <td>{{e.finish_time.strftime('%Y-%m-%d %H:%M')}}</td>
-      <td>{{e.name}}</td>
-      <td>{{e.user_name}}</td>
-      <td>{{e.unique_id}}</td>
-      <td>{{e.finish_return_code}}</td>
-      <td>
-        <input type="submit" value="Stdout" name="{{e.unique_id}}" class="btn btn-secondary">
-        <input type="submit" value="Stderr" name="{{e.unique_id}}" class="btn btn-secondary">
-        <input type="submit" value="Dockerfile" name="{{e.unique_id}}" class="btn btn-secondary">
-      </td>
-    </tr>
-    {% endfor %}
-  </form>
+  {% for e in finished_experiments.values()|sort(attribute='finish_time', reverse=True) %}
+  <tr>
+    <td>{{e.start_time.strftime('%Y-%m-%d %H:%M')}}</td>
+    <td>{{e.finish_time.strftime('%Y-%m-%d %H:%M')}}</td>
+    <td>{{e.name}}</td>
+    <td>{{e.user_name}}</td>
+    <td>{{e.unique_id}}</td>
+    <td>{{e.finish_return_code}}</td>
+    <td>
+        <a class="btn btn-secondary" href="{{url_for('stdout', e.unique_id)}}">Stdout</a>
+        <a class="btn btn-secondary" href="{{url_for('stderr', e.unique_id)}}">Stderr</a>
+        <a class="btn btn-secondary" href="{{url_for('dockerfile', e.unique_id)}}">Dockerfile</a>
+    </td>
+  </tr>
+  {% endfor %}
 </table><br>
 {% endblock %}
 
