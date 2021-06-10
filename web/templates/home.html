@@ -195,9 +195,9 @@
     <td>{{e.unique_id}}</td>
     <td>{{e.finish_return_code}}</td>
     <td>
-        <a class="btn btn-secondary" href="{{url_for('stdout', e.unique_id)}}">Stdout</a>
-        <a class="btn btn-secondary" href="{{url_for('stderr', e.unique_id)}}">Stderr</a>
-        <a class="btn btn-secondary" href="{{url_for('dockerfile', e.unique_id)}}">Dockerfile</a>
+        <a class="btn btn-secondary" href="{{url_for('stdout', experiment_id=e.unique_id)}}">Stdout</a>
+        <a class="btn btn-secondary" href="{{url_for('stderr', experiment_id=e.unique_id)}}">Stderr</a>
+        <a class="btn btn-secondary" href="{{url_for('dockerfile', experiment_id=e.unique_id)}}">Dockerfile</a>
     </td>
   </tr>
   {% endfor %}
