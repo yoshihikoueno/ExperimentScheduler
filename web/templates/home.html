@@ -36,7 +36,7 @@
   </ul>
 </p>
 
-<form name="experimentform" oninput="update_form()" method="post" action="/home/post" autocomplete="off" enctype="multipart/form-data">
+<form name="experimentform" oninput="update_form()" method="post" action="{{url_for('post')}}" autocomplete="off" enctype="multipart/form-data">
   <fieldset class="form-group">
     <legend>Scheduling an Experiment</legend>
 
@@ -135,7 +135,7 @@
     <td>{{e.unique_id}}</td>
     <td>
         <a class="btn btn-secondary" href="{{url_for('dockerfile', experiment_id=e.unique_id)}}">Dockerfile</a>
-        <form method="post" name="activeexperimentform" onsubmit="return confirm('Really stop this experiment?')" style="display: inline; margin: 0px; padding: 0px" action="/home/post">
+        <form method="post" name="activeexperimentform" onsubmit="return confirm('Really stop this experiment?')" style="display: inline; margin: 0px; padding: 0px" action="{{url_for('post')}}">
             <input type="submit" value="Stop" name="{{e.unique_id}}" class="btn btn-secondary">
         </form>
     </td>
@@ -162,7 +162,7 @@
       <a class="btn btn-secondary" href="{{url_for('stdout', experiment_id=e.unique_id)}}">Stdout</a>
       <a class="btn btn-secondary" href="{{url_for('stderr', experiment_id=e.unique_id)}}">Stderr</a>
       <a class="btn btn-secondary" href="{{url_for('dockerfile', experiment_id=e.unique_id)}}">Dockerfile</a>
-      <form method="post" name="activeexperimentform" onsubmit="return confirm('Really stop this experiment?')" style="display: inline; margin: 0px; padding: 0px" action="/home/post">
+      <form method="post" name="activeexperimentform" onsubmit="return confirm('Really stop this experiment?')" style="display: inline; margin: 0px; padding: 0px" action="{{url_for('post')}}">
         <input type="submit" value="Stop" name="{{e.unique_id}}" class="btn btn-secondary">
       </form>
     </td>
