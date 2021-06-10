@@ -134,9 +134,7 @@
     <td>{{e.user_name}}</td>
     <td>{{e.unique_id}}</td>
     <td>
-        <form method="post" name="activeexperimentform" style="display: inline; margin: 0px; padding: 0px" action="/home/post">
-            <input type="submit" value="Dockerfile" name="{{e.unique_id}}" class="btn btn-secondary">
-        </form>
+        <a class="btn btn-secondary" href="{{url_for('dockerfile', experiment_id=e.unique_id)}}">Dockerfile</a>
         <form method="post" name="activeexperimentform" onsubmit="return confirm('Really stop this experiment?')" style="display: inline; margin: 0px; padding: 0px" action="/home/post">
             <input type="submit" value="Stop" name="{{e.unique_id}}" class="btn btn-secondary">
         </form>
@@ -161,11 +159,9 @@
     <td>{{e.user_name}}</td>
     <td style="background-color: {{active_experiment_to_color[id]}};">{{e.unique_id}}</td>
     <td>
-      <form method="post" name="activeexperimentform" style="display: inline; margin: 0px; padding: 0px" action="/home/post">
-        <input type="submit" value="Stdout" name="{{e.unique_id}}" class="btn btn-secondary">
-        <input type="submit" value="Stderr" name="{{e.unique_id}}" class="btn btn-secondary">
-        <input type="submit" value="Dockerfile" name="{{e.unique_id}}" class="btn btn-secondary">
-      </form>
+      <a class="btn btn-secondary" href="{{url_for('stdout', experiment_id=e.unique_id)}}">Stdout</a>
+      <a class="btn btn-secondary" href="{{url_for('stderr', experiment_id=e.unique_id)}}">Stderr</a>
+      <a class="btn btn-secondary" href="{{url_for('dockerfile', experiment_id=e.unique_id)}}">Dockerfile</a>
       <form method="post" name="activeexperimentform" onsubmit="return confirm('Really stop this experiment?')" style="display: inline; margin: 0px; padding: 0px" action="/home/post">
         <input type="submit" value="Stop" name="{{e.unique_id}}" class="btn btn-secondary">
       </form>
