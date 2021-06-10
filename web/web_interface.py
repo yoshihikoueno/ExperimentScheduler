@@ -139,7 +139,7 @@ class WebInterface():
         def docker_example():
             return render_template('docker_example.html', css_file=self.css_file)
 
-        @self.app.route('/<string:experiment_id>/stdout')
+        @self.app.route('/experiment/<string:experiment_id>/stdout')
         @login_required
         def stdout(experiment_id):
             if (experiment_id in [*scheduler_ref.active_experiments, *scheduler_ref.finished_experiments]):
@@ -150,7 +150,7 @@ class WebInterface():
             else:
                 flash('Log not found.', 'danger')
 
-        @self.app.route('/<string:experiment_id>/stderr')
+        @self.app.route('/experiment/<string:experiment_id>/stderr')
         @login_required
         def stderr(experiment_id):
             if (experiment_id in [*scheduler_ref.active_experiments, *scheduler_ref.finished_experiments]):
@@ -161,7 +161,7 @@ class WebInterface():
             else:
                 flash('Log not found.', 'danger')
 
-        @self.app.route('/<string:experiment_id>/dockerfile')
+        @self.app.route('/experiment/<string:experiment_id>/dockerfile')
         @login_required
         def dockerfile(experiment_id):
             try:
