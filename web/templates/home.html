@@ -174,23 +174,26 @@
 <table class="table table-striped table-dark"  id="finishedexperiments">
   <caption>Finished Experiments</caption>
   <tr>
-    <th>Start Time</th>
-    <th>Finish Time</th>
-    <th>Experiment Name</th>
-    <th>User Name</th>
-    <th>Experiment ID</th>
-    <th>Return Code</th>
-    <th>Actions</th>
+    <th><p>Start Time</p></th>
+    <th><p>Finish Time</p></th>
+    <th><p>Experiment Name</p></th>
+    <th>
+        <p class="u-margin-bottom-tiny">User Name</p>
+        <input class="filter_box filter_box--name" type="text" placeholder="filter by name">
+    </th>
+    <th><p>Experiment ID</p></th>
+    <th><p>Return Code</p></th>
+    <th><p>Actions</p></th>
   </tr>
   {% for e in finished_experiments.values()|sort(attribute='finish_time', reverse=True) %}
   <tr>
-    <td>{{e.start_time.strftime('%Y-%m-%d %H:%M')}}</td>
-    <td>{{e.finish_time.strftime('%Y-%m-%d %H:%M')}}</td>
-    <td>{{e.name}}</td>
-    <td>{{e.user_name}}</td>
-    <td>{{e.unique_id}}</td>
-    <td>{{e.finish_return_code}}</td>
-    <td>
+    <td class="table__dcell--start"><p>{{e.start_time.strftime('%Y-%m-%d %H:%M')}}</p></td>
+    <td class="table__dcell--end"><p>{{e.finish_time.strftime('%Y-%m-%d %H:%M')}}</p></td>
+    <td class="table__dcell--experiment_name"><p>{{e.name}}</p> </td>
+    <td class="table__dcell--username"><p>{{e.user_name}}</p></td>
+    <td class="table__dcell--experiment_id"><p>{{e.unique_id}}</p></td>
+    <td class="table__dcell--code"><p>{{e.finish_return_code}}</p></td>
+    <td class="table__dcell--ops">
         <a class="btn btn-secondary" href="{{url_for('stdout', experiment_id=e.unique_id)}}">Stdout</a>
         <a class="btn btn-secondary" href="{{url_for('stderr', experiment_id=e.unique_id)}}">Stderr</a>
         <a class="btn btn-secondary" href="{{url_for('dockerfile', experiment_id=e.unique_id)}}">Dockerfile</a>
