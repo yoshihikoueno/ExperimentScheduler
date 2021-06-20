@@ -186,7 +186,7 @@
     <th><p>Actions</p></th>
   </tr>
   {% for e in finished_experiments.values()|sort(attribute='finish_time', reverse=True) %}
-  <tr>
+  <tr class="table__drow">
     <td class="table__dcell--start"><p>{{e.start_time.strftime('%Y-%m-%d %H:%M')}}</p></td>
     <td class="table__dcell--end"><p>{{e.finish_time.strftime('%Y-%m-%d %H:%M')}}</p></td>
     <td class="table__dcell--experiment_name"><p>{{e.name}}</p> </td>
