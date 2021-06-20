@@ -7,3 +7,22 @@ span[data-toggle="tooltip"] {
                 max-width: 1400px;
         }
 }
+
+.filter_box {
+    background-color: rgba(0, 0, 0, .1);
+    border: none;
+    color: white;
+    width: 7rem;
+}
+
+.filter_box:focus {
+    outline: none;
+}
+
+.filter_box:hover {
+    background-color: rgba(0, 0, 0, .3);
+}
+
+.u-margin-bottom-tiny {
+    margin-bottom: .5rem;
+}
