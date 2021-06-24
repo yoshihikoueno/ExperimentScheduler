@@ -251,8 +251,34 @@ class WorkerInterface:
         assert len(device_indices) == num_devices
         return device_indices
 
-    def _get_env(self, device_indices=None, tf_config_env=None):
+    def _get_env(self, device_indices=None, tf_config_env=None, filtered=True):
+        '''
+        Get environment values in dict, which will be passed for `docker run`.
+
+        Args:
+            device_indices: indices of GPU
+                **This option is deprecated. Use `--gpus` option in docker instead.**
+            tf_config_env: environment settings for tensorflow, if any.
+                Common usage of this is to set up an environment for multi-worker
+                utilization.
+            filtered: whether default enviroment values should be filtered
+                in order not to ruine the default ENV in docker.
+                For example, passing `PATH` to docker container may cause issues
+                by overwriting `PATH` that the container had.
+        '''
+        filter_list = {
+            'SHELL', 'SUDO_GID', 'LC_ADDRESS', 'LC_NAME', 'SUDO_COMMAND',
+            'LC_MONETARY', 'SUDO_USER', 'PWD', 'KRB5CCNAME', 'LOGNAME',
+            'HOME', 'LC_PAPER', 'LANG', 'LS_COLORS', 'LESSCLOSE', 'LC_IDENTIFICATION',
+            'TERM', 'LESSOPEN', 'USER', 'SHLVL', 'LC_TELEPHONE', 'LC_MEASUREMENT',
+            'LC_CTYPE', 'LC_TIME', 'XDG_DATA_DIRS', 'PATH', 'SUDO_UID',
+            'MAIL', 'LC_NUMERIC', '_'}
+
         env = os.environ.copy()
+        if filtered:
+            for key in set(env) & filter_list:
+                env.pop(key)
+
         if tf_config_env:
             env['TF_CONFIG'] = json.dumps(tf_config_env)
         env['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
