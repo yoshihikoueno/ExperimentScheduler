@@ -4,6 +4,7 @@ import json
 import subprocess
 import logging
 import sys
+import re
 import xmltodict
 import pprint
 
@@ -34,6 +35,9 @@ class WorkerInterface:
 
         self.resource_folder = resource_folder
         self.docker_resource_folder = docker_resource_folder
+
+        self.mem_hard_limit_ratio = .95
+        self.mem_soft_limit_ratio = .75
 
     @property
     def device_states(self):
@@ -144,17 +148,27 @@ class WorkerInterface:
 
         # We need to mount user and group folder, otherwise the docker environment
         # will create stuff as root in the result folders
-        # 1003: group id of gescheduler
         # We also need to add the localtime file, so that the timezone of the host
         # and the container will be the same
-        user_arg = ['-v', '/etc/passwd:/etc/passwd:ro',
-                    '-v', '/etc/group:/etc/group:ro',
-                    '-v', '/etc/localtime:/etc/localtime:ro',
-                    '-v', '/sys:/sys:ro',
-                    '-v', '/dev/shm:/dev/shm',
-                    '-u', f'$(id -u {experiment.user_name}):$(id -g {experiment.user_name})',
-                    ]
+        options = ['-v', '/etc/passwd:/etc/passwd:ro',
+                   '-v', '/etc/group:/etc/group:ro',
+                   '-v', '/etc/localtime:/etc/localtime:ro',
+                   '-v', '/sys:/sys:ro',
+                   '-v', '/dev/shm:/dev/shm',
+                   '-u', f'$(id -u {experiment.user_name}):$(id -g {experiment.user_name})',
+                   ]
         tty = ['-t'] if self.is_tty else []
+
+        # Add ram_safe_guard
+        try:
+            mem_total_mb = self.get_ram_size()
+            hard_limit = int(mem_total_mb * self.mem_hard_limit_ratio)
+            soft_limit = int(mem_total_mb * self.mem_soft_limit_ratio)
+            ram_guard = ['--memory', f'{hard_limit}m', '--memory-reservation', f'{soft_limit}m']
+        except Exception as e:
+            logging.error(f'Failed to set memory limit.\n{e}')
+        else:
+            options += ram_guard
 
         with tempfile.NamedTemporaryFile() as f:
             fname = f.name
@@ -167,7 +181,7 @@ class WorkerInterface:
                 'docker', 'run', '--rm', '--name', experiment.unique_id,
                 '--gpus', '\'"device=' + ','.join(map(str, device_indices)) + '"\'',
             ]
-            docker_run_cmd += resource_folder_arg + user_arg + env_args
+            docker_run_cmd += resource_folder_arg + options + env_args
             remote_cmd = docker_build_cmd + ['&&'] + docker_run_cmd + [experiment.unique_id]
             cmd = ['ssh'] + tty + [self.host] + remote_cmd
 
@@ -285,6 +299,18 @@ class WorkerInterface:
         if device_indices:
             env['CUDA_VISIBLE_DEVICES'] = ','.join(map(str, device_indices))
         return env
+
+    def get_ram_size(self):
+        '''Retrieve worker RAM size in MB.'''
+        try:
+            meminfo = subprocess.check_output(['ssh', self.host, 'cat', '/proc/meminfo']).decode()
+        except Exception as e:
+            raise RuntimeError(f'Failed to retrieve meminfo.\n{e}')
+
+        matched = re.search(r'^MemTotal:\s+(\d+)', meminfo).groups()
+        if len(matched) != 1: raise RuntimeError(f'Unexpected content in meminfo.\nlen(matched) == {len(matched)}\n{meminfo}')
+        mem_size = int(matched[0]) // 1024
+        return mem_size
 
     def get_num_gpus(self):
         try:
