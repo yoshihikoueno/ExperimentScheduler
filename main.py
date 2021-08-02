@@ -52,6 +52,8 @@ def run(logdir, config, port, public):
             logdir=logdir,
             resource_folder=config.resource_folder,
             docker_resource_folder=config.docker_resource_folder,
+            mem_hard_limit_ratio=config.mem_hard_limit_ratio,
+            mem_soft_limit_ratio=config.mem_soft_limit_ratio,
         ) for host in hosts
     }
 

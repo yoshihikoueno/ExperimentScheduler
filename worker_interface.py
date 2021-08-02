@@ -10,7 +10,16 @@ import pprint
 
 
 class WorkerInterface:
-    def __init__(self, host, tf_ports, logdir, resource_folder, docker_resource_folder):
+    def __init__(
+        self,
+        host,
+        tf_ports,
+        logdir,
+        resource_folder,
+        docker_resource_folder,
+        mem_hard_limit_ratio,
+        mem_soft_limit_ratio,
+    ):
         self.host = host
         # Contains booleans whether the device at its index is free or not
         self._device_states = [True] * self.get_num_gpus()
@@ -36,8 +45,8 @@ class WorkerInterface:
         self.resource_folder = resource_folder
         self.docker_resource_folder = docker_resource_folder
 
-        self.mem_hard_limit_ratio = .95
-        self.mem_soft_limit_ratio = .75
+        self.mem_hard_limit_ratio = mem_hard_limit_ratio
+        self.mem_soft_limit_ratio = mem_soft_limit_ratio
 
     @property
     def device_states(self):

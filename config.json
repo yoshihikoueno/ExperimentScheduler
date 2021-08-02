@@ -4,5 +4,7 @@
     "experiment_time_limit": 24,
     "ups": 0.2,
     "resource_folder": "/mnt/dataset",
-    "docker_resource_folder": "/kw_resources"
+    "docker_resource_folder": "/kw_resources",
+    "mem_hard_limit_ratio": 0.90,
+    "mem_soft_limit_ratio": 0.60
 }
