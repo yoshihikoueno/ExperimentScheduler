@@ -7,7 +7,6 @@ function filter_by(query, metric_name) {
 }
 
 $(document).ready(function (){
-  console.log("ready");
   $(".filter_box--name").on(
     "keyup",
     function () {filter_by($(this).val(), "username");},
