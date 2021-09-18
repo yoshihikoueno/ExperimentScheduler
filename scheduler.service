@@ -6,7 +6,7 @@ StartLimitIntervalSec=0
 Restart=always
 RestartSec=5
 WorkingDirectory=/home/kw-scheduler/ExperimentScheduler
-ExecStartPre=/usr/bin/git pull
+ExecStartPre=/usr/bin/git pull; /usr/bin/pip3 install -r requirements.txt
 ExecStart=/usr/bin/python3 main.py --logdir logdir --public
 
 [Install]
