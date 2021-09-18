@@ -5,6 +5,7 @@ StartLimitIntervalSec=0
 [Service]
 Restart=always
 RestartSec=5
+TimeoutStartSec=300
 WorkingDirectory=/home/kw-scheduler/ExperimentScheduler
 ExecStartPre=/usr/bin/git pull; /usr/bin/pip3 install -r requirements.txt
 ExecStart=/usr/bin/python3 main.py --logdir logdir --public
