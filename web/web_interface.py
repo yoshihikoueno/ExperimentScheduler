@@ -88,6 +88,21 @@ class WebInterface():
 
                 return render_template('login.html', form=form, css_file=self.css_file)
 
+        @self.app.route('/api/experiments/finished', methods=['GET'])
+        @login_required
+        def finished_experiments():
+            data = list(map(lambda experiment: experiment.to_dict(), scheduler_ref.finished_experiments.values()))
+
+            sort_reverse = request.args.get('sort_reverse', default=False, type=bool)
+            sort_by = request.args.get('sort_by', default=None, type=lambda key: (lambda obj: obj[key]))
+            if sort_by is not None:
+                data = sorted(data, key=sort_by, reverse=sort_reverse)
+
+            offset = request.args.get('offset', default=0, type=int)
+            limit = request.args.get('limit', default=None, type=int)
+            end = None if limit is None else limit + offset
+            return data[offset:end]
+
         @self.app.route('/home', methods=['GET'])
         @login_required
         def home():
