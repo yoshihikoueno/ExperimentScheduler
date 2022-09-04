@@ -27,3 +27,16 @@ class Experiment():
         value = hash(self.name + self.user_name + str(self.schedule_time))
         value = 2 * abs(value) + (value < 0)
         return value
+
+    def __repr__(self):
+        def is_target(attr_name):
+            excludes = ('docker_file')
+
+            if attr_name in excludes: return False
+            if attr_name[0] == '_': return False
+            if callable(vars(self)[attr_name]): return False
+            return True
+
+        target_attrs = list(filter(is_target, vars(self)))
+        self_repr = ', '.join(map(lambda attr: f'{attr}: {vars(self)[attr]}', target_attrs))
+        return f'Experiment ({self_repr})'
