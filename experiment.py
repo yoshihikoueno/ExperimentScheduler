@@ -2,6 +2,12 @@ import datetime
 
 
 class Experiment():
+    exposed_attributes = (
+        'docker_file', 'name', 'gpu_settings', 'use_multiple_workers', 'can_restart',
+        'user_name', 'framework', 'schedule_time', 'start_time', 'finish_time', 'finish_return_code',
+        'unique_id', 'can_be_run_on'
+    )
+
     def __init__(
         self, docker_file, name, gpu_settings,
         use_multiple_workers, user_name, framework, can_restart=False,
@@ -27,6 +33,18 @@ class Experiment():
         value = hash(self.name + self.user_name + str(self.schedule_time))
         value = 2 * abs(value) + (value < 0)
         return value
+
+    def to_dict(self):
+        def _filter(value):
+            if isinstance(value, set):
+                return list(value)
+            else: return value
+
+
+        return dict(
+            (attr, _filter(getattr(self, attr))) if hasattr(self, attr) else (attr, None)
+            for attr in self.exposed_attributes
+        )
 
     def __repr__(self):
         def is_target(attr_name):
