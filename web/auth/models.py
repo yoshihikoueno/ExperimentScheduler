@@ -2,7 +2,7 @@ import ldap
 
 from flask_wtf import FlaskForm
 from flask_login import login_user, logout_user
-from wtforms import TextField, PasswordField
+from wtforms import StringField, PasswordField
 from wtforms.validators import InputRequired
 
 
@@ -62,5 +62,5 @@ class UserManager():
 
 
 class LoginForm(FlaskForm):
-  username = TextField('Username', [InputRequired()])
+  username = StringField('Username', [InputRequired()])
   password = PasswordField('Password', [InputRequired()])

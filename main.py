@@ -11,7 +11,7 @@ import scheduler
 import worker_interface
 from utils import logger
 from utils import util_ops
-from web import web_interface as wi
+from web.web_interface import WebInterface
 
 def load_config(config_path):
     with open(config_path) as f:
@@ -26,6 +26,8 @@ def load_config(config_path):
 
 def run(logdir, config, port, public):
     web_port = port
+    logdir = os.path.abspath(logdir)
+    os.makedirs(logdir, exist_ok=True)
     logger.init_logger(logdir)
 
     if not os.path.exists(logdir):
@@ -67,7 +69,7 @@ def run(logdir, config, port, public):
     # Register shutdown callback
     atexit.register(experiment_scheduler.shutdown)
 
-    web_interface = wi.WebInterface(
+    web_interface = WebInterface(
         scheduler_ref=experiment_scheduler,
         resource_folder=config.resource_folder,
         docker_resource_folder=config.docker_resource_folder,
