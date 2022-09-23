@@ -34,15 +34,17 @@ class Experiment():
         value = 2 * abs(value) + (value < 0)
         return value
 
-    def to_dict(self):
+    def to_dict(self, datetime_format=None):
         def _filter(value):
             if isinstance(value, set):
                 return list(value)
+            elif isinstance(value, datetime.datetime) and datetime_format:
+                return value.strftime(datetime_format)
             else: return value
 
 
         return dict(
-            (attr, _filter(getattr(self, attr))) if hasattr(self, attr) else (attr, None)
+            (attr, _filter(getattr(self, attr, None)))
             for attr in self.exposed_attributes
         )
 
