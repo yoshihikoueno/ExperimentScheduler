@@ -1,0 +1,34 @@
+#finishedexperiments thead,
+#finishedexperiments tbody
+{
+    display: block;
+}
+
+#finishedexperiments tbody {
+    overflow-y: scroll;
+    max-height: 80vh;
+}
+
+#finishedexperiments .time-header {
+    width: 9.6em;
+}
+
+#finishedexperiments .experiment-id-header {
+    width: 10.5em;
+}
+
+#finishedexperiments .experiment-name-header {
+    width: 15.5em;
+}
+
+#finishedexperiments .username-header {
+    width: 9.6em;
+}
+
+#finishedexperiments .return-code-header {
+    width: 10.8em;
+}
+
+#finishedexperiments .actions-header {
+    width: 16.9em;
+}
