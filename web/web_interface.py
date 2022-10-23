@@ -93,6 +93,11 @@ class WebInterface():
         def finished_experiments():
             data = list(map(lambda experiment: experiment.to_dict(datetime_format='%Y-%m-%d %H:%M'), scheduler_ref.finished_experiments.values()))
 
+            user_name_query = request.args.get('user_name_query', default='', type=str)
+            data = filter(lambda experiment: user_name_query in experiment['user_name'], data)
+            experiment_name_query = request.args.get('experiment_name_query', default='', type=str)
+            data = filter(lambda experiment: experiment_name_query in experiment['name'], data)
+
             sort_reverse = request.args.get('sort_reverse', default=False, type=bool)
             sort_by = request.args.get('sort_by', default=None, type=lambda key: (lambda obj: obj[key]))
             if sort_by is not None:
