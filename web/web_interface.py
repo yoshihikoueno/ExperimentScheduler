@@ -91,7 +91,7 @@ class WebInterface():
         @self.app.route('/api/experiments/finished', methods=['GET'])
         @login_required
         def finished_experiments():
-            data = list(map(lambda experiment: experiment.to_dict(), scheduler_ref.finished_experiments.values()))
+            data = list(map(lambda experiment: experiment.to_dict(datetime_format='%Y-%m-%d %H:%M'), scheduler_ref.finished_experiments.values()))
 
             sort_reverse = request.args.get('sort_reverse', default=False, type=bool)
             sort_by = request.args.get('sort_by', default=None, type=lambda key: (lambda obj: obj[key]))
