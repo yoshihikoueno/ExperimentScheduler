@@ -181,11 +181,11 @@
       <th class="time-header"><p>Finish Time</p></th>
       <th class="experiment-name-header">
           <p class="u-margin-bottom-tiny">Experiment Name</p>
-          <input class="filter_box filter_box--experiment" type="text" placeholder="filter by experiment">
+          <input class="filter_box filter_box--experiment" type="text" placeholder="filter by experiment" v-model="experimentNameQuery">
       </th>
       <th class="username-header">
           <p class="u-margin-bottom-tiny">User Name</p>
-          <input class="filter_box filter_box--name" type="text" placeholder="filter by name">
+          <input class="filter_box filter_box--name" type="text" placeholder="filter by name" v-model="userNameQuery">
       </th>
       <th class="experiment-id-header"><p>Experiment ID</p></th>
       <th class="return-code-header"><p>Return Code</p></th>
@@ -224,23 +224,54 @@ const app = createApp({
             loadLimit: 30,
             loading: false,
             loadCriteria: 0.8,
+            userNameQuery: '',
+            experimentNameQuery: '',
+            queryDelay: 300,
         }
     },
     methods: {
-        loadFinishedExperiments() {
+        loadFinishedExperiments(refresh = false) {
             if (this.loading) {return}
             this.loading = true
-            const currentLength = this.finishedExperiments.length
-            fetch('/api/experiments/finished?' + new URLSearchParams({sort_by: 'start_time', sort_reverse: true, offset: currentLength, limit: this.loadLimit}))
-                .then(res => res.json())
-                .then(data => {this.finishedExperiments.push(...data)})
-                .then(() => this.loading = false)
+            fetch('/api/experiments/finished?' + new URLSearchParams(
+                {
+                    sort_by: 'start_time',
+                    sort_reverse: true,
+                    offset: refresh ? 0 : this.finishedExperiments.length,
+                    limit: this.loadLimit,
+                    user_name_query: this.userNameQuery,
+                    experiment_name_query: this.experimentNameQuery,
+                }
+            )).then(res => res.json())
+              .then(data => {
+                  if (refresh) { this.finishedExperiments = [] }
+                  this.finishedExperiments.push(...data)
+              })
+              .then(() => this.loading = false)
         },
         loadOnScroll(event) {
             const el = event.target
             const scrollPercentage = el.scrollTop / (el.scrollHeight - el.clientHeight)
             if (scrollPercentage > this.loadCriteria) {this.loadFinishedExperiments()}
-        }
+        },
+        requstDelayedRefresh() {
+            clearTimeout(this.refreshTimeoutID)
+            this.refreshTimeoutID = setTimeout(
+                () => {
+                    this.loadFinishedExperiments(true)
+                    this.refreshTimeoutID = undefined
+                },
+                this.queryDelay,
+            )
+        },
+    },
+    watch: {
+        userNameQuery() {
+            this.requstDelayedRefresh()
+        },
+        experimentNameQuery() {
+            this.requstDelayedRefresh()
+        },
     },
     mounted() {
         window.appContext = this
