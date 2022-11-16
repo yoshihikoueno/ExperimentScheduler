@@ -179,27 +179,21 @@ class WorkerInterface:
         else:
             options += ram_guard
 
-        with tempfile.NamedTemporaryFile() as f:
-            fname = f.name
-            f.write(experiment.docker_file.encode())
-            f.flush()
+        docker_build_cmd = ['docker', 'build', '--no-cache', '-t', experiment.unique_id, '-']
+        docker_run_cmd = [
+            'docker', 'run', '--rm', '--name', experiment.unique_id,
+            '--gpus', '\'"device=' + ','.join(map(str, device_indices)) + '"\'',
+        ] + resource_folder_arg + options + env_args + [experiment.unique_id]
+        remote_cmd = docker_build_cmd + ['&&'] + docker_run_cmd
+        cmd = ['ssh'] + tty + [self.host] + remote_cmd
 
-            cat_cmd = ['cat', fname]
-            docker_build_cmd = ['docker', 'build', '--no-cache', '-t', experiment.unique_id, '-']
-            docker_run_cmd = [
-                'docker', 'run', '--rm', '--name', experiment.unique_id,
-                '--gpus', '\'"device=' + ','.join(map(str, device_indices)) + '"\'',
-            ]
-            docker_run_cmd += resource_folder_arg + options + env_args
-            remote_cmd = docker_build_cmd + ['&&'] + docker_run_cmd + [experiment.unique_id]
-            cmd = ['ssh'] + tty + [self.host] + remote_cmd
-
-            # Create log files for this experiment
-            stdout_file = os.path.join(self._logdir, f'{experiment.unique_id}_stdout')
-            stderr_file = os.path.join(self._logdir, f'{experiment.unique_id}_stderr')
-            with open(stdout_file, 'w') as out, open(stderr_file, 'w') as err:
-                cat_ps = subprocess.Popen(cat_cmd, stdout=subprocess.PIPE, stderr=None, shell=False)
-                pid = subprocess.Popen(cmd, stdout=out, stderr=err, stdin=cat_ps.stdout, shell=False)
+        # Create log files for this experiment
+        stdout_file = os.path.join(self._logdir, f'{experiment.unique_id}_stdout')
+        stderr_file = os.path.join(self._logdir, f'{experiment.unique_id}_stderr')
+        with open(stdout_file, 'w') as out, open(stderr_file, 'w') as err:
+            pid = subprocess.Popen(cmd, stdout=out, stderr=err, stdin=subprocess.PIPE, shell=False)
+            pid.stdin.write(experiment.docker_file.encode())
+            pid.stdin.close()
 
         self._experiment_processes[experiment.unique_id] = pid
         self._active_experiments[experiment.unique_id] = experiment, device_indices
